@@ -1,0 +1,5 @@
+
+development:
+  dialect: sqlite3
+  datasource: hn-go-development.db
+  dir: migrations/development/sqlite3
