@@ -1,0 +1,1 @@
+license: GNU AGPLv3

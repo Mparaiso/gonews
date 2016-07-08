@@ -1,0 +1,100 @@
+{{ template "header" . }} 
+{{ $HAS_ERROR := "has-error" }}
+{{/* form error list helper */}}
+{{ define "list_form_errors" -}}
+	{{ if . -}}
+		<ul class="text-error unstyled" class="form-error-list">
+			{{ range . }}<li>{{.}}</li>{{ end }}
+		</ul>
+	{{- end -}}	
+{{- end }}
+<div>
+	<!-- LOGIN FORM -->
+	<form name="{{.Data.LoginForm.Name}}" method="post" class="form-horizontal" action="/login" accept-charset="UTF-8" enctype="application/x-www-form-urlencoded">
+		<!-- csrf token -->
+		<input type="hidden" value="{{.Data.LoginForm.CSRF}}" required  name="login_csrf" id="login_csrf" />
+		<fieldset>
+			<legend>Login:</legend>
+			<div class="form-group">
+				<label for="username" class="control-label col-sm-1">
+						username: 
+					</label>
+				<div class="col-sm-4 {{ and .Data.LoginForm.Errors.Username $HAS_ERROR }}" >
+					{{ template "list_form_errors" .Data.LoginForm.Errors.Username }}
+					<input class="form-control" value="{{.Data.LoginForm.Username}}" required name="login_username" id="login_username" />
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="password" class="control-label col-sm-1">
+						password: 
+					</label>
+				<div class="col-sm-4 {{ and .Data.LoginForm.Errors.Password $HAS_ERROR }}">
+					{{ template "list_form_errors" .Data.LoginForm.Errors.Password }}
+					<input class="form-control" value="{{.Data.LoginForm.Password}}" type="password" required name="login_password" id="login_password" />
+				</div>
+			</div>
+			<div class="form-group class=" control-label="col-sm-1">
+				<div class="col-sm-offset-1 col-sm-2">
+					<input class="btn btn-default" required type="submit" name="submit" value="Login_submit" />
+				</div>
+			</div>
+		</fieldset>
+	</form>
+	<p>&nbsp;</p>
+	<!-- REGISTRATION FORM -->
+	<form name="{{.Data.RegistrationForm.Name}}" method="post" class="form-horizontal" action="/register" accept-charset="UTF-8" enctype="application/x-www-form-urlencoded">
+			<input type="hidden" value="{{.Data.RegistrationForm.CSRF}}" required  name="registration_csrf" id="registration_csrf" />
+		<fieldset>
+			<legend>Create an Account:</legend>
+			<div class="form-group">
+				<div class="col-sm-offset-1 col-sm-4">
+					{{ template "list_form_errors" .Data.RegistrationForm.Errors.CSRF }}
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="username" class="control-label col-sm-1">
+						username:
+					</label>
+				<div class="col-sm-4">
+					{{ template "list_form_errors" .Data.RegistrationForm.Errors.Username }}
+					<input class="form-control" value="{{.Data.RegistrationForm.Username}}" placeholder="your username" required min="6" max="100" name="registration_username" id="registration_username" />
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label col-sm-1" for="email">
+					email: 
+					</label>
+				<div class="col-sm-4">
+					{{ template "list_form_errors" .Data.RegistrationForm.Errors.Email }}
+					<input class="form-control" value="{{.Data.RegistrationForm.Email}}" placeholder="you@email.acme" required min="6" max="255" type="email" name="registration_email" id="registration_email"
+					/>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label col-sm-1" for="password">
+					password: 
+					</label>
+				<div class="col-sm-4">
+					{{ template "list_form_errors" .Data.RegistrationForm.Errors.Password }}
+					<input class="form-control" value="{{.Data.RegistrationForm.Password}}" placeholder="your password" required min="6" max="255" type="password" name="registration_password" id="registration_password"
+					/>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label col-sm-1" for="password">
+					password: 
+					</label>
+				<div class="col-sm-4">
+					<input class="form-control" value="{{.Data.RegistrationForm.PasswordConfirmation}}" placeholder="confirm you password" required min="6" max="255" type="password" name="registration_password_confirmation" 
+						id="registration_password_confirmation" />
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-offset-1 col-sm-4">
+					<input class="btn btn-default" required type="submit" name="submit" value="Create" />
+				</div>
+			</div>
+		</fieldset>
+	</form>
+</div>
+{{ template "footer" . }}

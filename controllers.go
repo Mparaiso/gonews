@@ -1,0 +1,165 @@
+// @Copyright (c) 2016 mparaiso <mparaiso@online.fr>  All rights reserved.
+
+package gonews
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+)
+
+// ThreadIndexController displays a list of links
+func ThreadIndexController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	repository, err := c.GetThreadRepository()
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	threads, err := repository.GetThreadsOrderedByVoteCount(100, 0)
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+
+	err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_list.tpl.html", map[string]interface{}{"Threads": threads})
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+	}
+}
+
+// ThreadListByAuthorIDController displays user's submitted stories
+func ThreadListByAuthorIDController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 32)
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+	}
+	userRepository := c.MustGetUserRepository()
+	user, err := userRepository.GetById(id)
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+	}
+	if user == nil {
+		c.HTTPError(rw, r, 404, fmt.Sprintf("User with id %d not found", id))
+	}
+	threadRepository := c.MustGetThreadRepository()
+	threads, err := threadRepository.GetByAuthorID(user.ID)
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+	}
+	for _, thread := range threads {
+		thread.Author = user
+	}
+	c.MustGetTemplate().ExecuteTemplate(rw, "user_submitted_stories.tpl.html", map[string]interface{}{"Threads": threads, "Author": user})
+}
+
+// ThreadShowController displays a thread and its comments
+func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 0)
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	repository, err := c.GetThreadRepository()
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	thread, err := repository.GetThreadByIDWithCommentsAndTheirAuthors(int(id))
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	if thread == nil {
+		c.HTTPError(rw, r, 404, fmt.Errorf("Thread with ID %d Not Found", id))
+		return
+	}
+	tpl, err := c.GetTemplate()
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	err = tpl.ExecuteTemplate(rw, "thread_show.tpl.html", map[string]interface{}{"Thread": thread})
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+}
+
+// LoginController displays the login/signup page
+func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	loginCSRF := c.GetCSRFProvider(r).Generate( r.RemoteAddr, "login")
+	loginForm := &LoginForm{CSRF: loginCSRF, Name: "login"}
+	registrationCSRF := c.GetCSRFProvider(r).Generate( r.RemoteAddr, "registration")
+	registrationForm := &RegistrationForm{CSRF: registrationCSRF, Name: "registration"}
+	err := c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
+		"LoginForm":        loginForm,
+		"RegistrationForm": registrationForm,
+	})
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+	}
+}
+
+func RegistrationController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	// Parse form
+	err := r.ParseForm()
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	registrationForm := &RegistrationForm{}
+	err = registrationForm.HandleRequest(r)
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	registrationFormValidator := NewRegistrationFormValidator(r, c.GetCSRFProvider(r), c.MustGetUserRepository())
+	validationError := registrationFormValidator.Validate(registrationForm)
+	if validationError != nil {
+		c.MustGetLogger().Error(validationError)
+		c.MustGetSession(r).AddFlash("Registration Form has errors", "errors")
+		rw.WriteHeader(http.StatusBadRequest)
+		tErr := c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
+			"RegistrationForm": registrationForm,
+		})
+		c.MustGetLogger().Error(tErr)
+		return
+	}
+	user := registrationForm.Model()
+	user.CreateSecurePassword(user.Password)
+	err = c.MustGetUserRepository().Save(user)
+	if err != nil {
+		c.HTTPError(rw, r, http.StatusInternalServerError, err)
+		return
+	}
+	c.MustGetSession(r).AddFlash("Registration Successful, please login", "success")
+	http.Redirect(rw, r, "/login", http.StatusCreated)
+}
+
+// UserShowController displays the user's informations
+func UserShowController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 0)
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	user, err := c.MustGetUserRepository().GetById(id)
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	if user == nil {
+		c.HTTPError(rw, r, 404, errors.New(http.StatusText(404)))
+		return
+	}
+	err = c.MustGetTemplate().ExecuteTemplate(rw, "user_profile.tpl.html", map[string]interface{}{"User": user})
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+	}
+}
+
+// NotFoundController is a standard 404 page
+func NotFoundController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	c.HTTPError(rw, r, 404, errors.New(http.StatusText(404)))
+}
