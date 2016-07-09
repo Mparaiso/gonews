@@ -1,10 +1,10 @@
-package gonews_test
+package main_test
 
 import (
 	"testing"
 
 	"database/sql"
-	"github.com/mparaiso/go-news"
+	"github.com/mparaiso/go-news/internal"
 	"net/http"
 )
 
@@ -32,7 +32,7 @@ func Test_RegistrationFormValidator_valid_registrationForm(t *testing.T) {
 	r.RemoteAddr = "some-addr"
 	validator := gonews.NewRegistrationFormValidator(r, TestCSRFProvider{}, TestUserFinder{})
 	errors := validator.Validate(form)
-	if errors.HasErrors() {
+	if errors != nil {
 		t.Fatal("There should be no error got : ", errors)
 	}
 }

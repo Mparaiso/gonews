@@ -1,9 +1,9 @@
-package gonews_test
+package  main_test
 
 import (
 	"testing"
 
-	"github.com/mparaiso/go-news"
+	 "github.com/mparaiso/go-news/internal"
 )
 
 func Test_Comments_GetTree(t *testing.T) {

@@ -1,7 +1,7 @@
-package gonews_test
+package main_test
 
 import "testing"
-import gonews "github.com/mparaiso/go-news"
+import gonews "github.com/mparaiso/go-news/internal"
 
 func TestThreadRepository_GetByAuthorID(t *testing.T) {
 	// DEBUG = true

@@ -1,4 +1,4 @@
-package gonews_test
+package main_test
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/mparaiso/go-news"
+	"github.com/mparaiso/go-news/internal"
 )
 
 // ExampleStack_first demonstrates the use of the middleware stack

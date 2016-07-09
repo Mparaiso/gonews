@@ -1,6 +1,6 @@
 // @Copyright (c) 2016 mparaiso <mparaiso@online.fr>  All rights reserved.
 
-package gonews_test
+package main_test
 
 import (
 	"database/sql"
@@ -11,12 +11,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
-
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/mparaiso/go-news"
+	"github.com/mparaiso/go-news/internal"
 	"github.com/rubenv/sql-migrate"
 
 	"net/url"
@@ -151,6 +150,19 @@ func TestAppLogin_GET(t *testing.T) {
 	}
 }
 
+// TestAppLogin_POST logs a registered user into the application
+func TestAppLogin_POST(t *testing.T) {
+	_, _, _, err := LoginUserHelper(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAppLogout(t *testing.T) {
+	// db, server, user, err := LoginUserHelper(t)
+
+}
+
 // TestAppLogin_POST_registration tests the registration process and verifies
 // the new user has been persisted into the db
 func TestAppLogin_POST_registration(t *testing.T) {
@@ -183,7 +195,7 @@ func TestAppLogin_POST_registration(t *testing.T) {
 		"registration_email":                 {"jefferson@acme.com"},
 	})
 	resp, err = http.Post(server.URL+"/register", "application/x-www-form-urlencoded", strings.NewReader(values.Encode()))
-	defer resp.Body.Close()
+	// defer resp.Body.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,6 +213,70 @@ func TestAppLogin_POST_registration(t *testing.T) {
 		t.Fatalf("username : expected '%v' got '%v' ", username, usernameResult)
 	}
 	///http.CookieJar
+}
+
+// LoginUserHelper logs a user before executing a test
+func LoginUserHelper(t *testing.T) (*sql.DB, *httptest.Server, *gonews.User, error) {
+	// Setup
+	db := GetDB(t)
+	server := SetUp(t, db)
+	unencryptedPassword := "password"
+	user := &gonews.User{Username: "mike_doe", Email: "mike_doe@acme.com"}
+	user.CreateSecurePassword(unencryptedPassword)
+	result, err := db.Exec("INSERT INTO users(username,email,password) values(?,?,?);", user.Username, user.Email, user.Password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// t.Logf("%#v", user)
+	if n, err := result.RowsAffected(); err != nil || n != 1 {
+		t.Fatal(n, err)
+	}
+	defer server.Close()
+	http.DefaultClient.Jar = NewTestCookieJar()
+	// test
+	res, err := http.Get(server.URL + "/login")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	doc, err := goquery.NewDocumentFromResponse(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection := doc.Find("input[name='login_csrf']")
+
+	csrf, ok := selection.First().Attr("value")
+	if !ok {
+		t.Fatal("csrf not found in HTML document", selection, ok)
+	}
+	if strings.Trim(csrf, " ") == "" {
+		t.Fatal("csrf not found")
+	}
+	formValues := url.Values{
+		"login_username": {user.Username},
+		"login_password": {unencryptedPassword},
+		"login_csrf":     {csrf},
+	}
+	res, err = http.Post(server.URL+"/login", "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if expected, got := 200, res.StatusCode; expected != got {
+		//t.Logf(" %s %s", ioutil.ReadAll(res.Body))
+		t.Fatalf("POST /login status : expected '%v' got '%v'", expected, got)
+	}
+	doc, err = goquery.NewDocumentFromResponse(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection = doc.Find(".current-user")
+	t.Log(doc.Html())
+	if expected, got := 1, selection.Length(); expected != got {
+		t.Fatalf(".current-user length : expect '%v' got '%v' ", expected, got)
+	}
+	return db, server, user, err
 }
 
 func TestApp_404(t *testing.T) {
@@ -238,7 +314,7 @@ var Directory = func() string {
 	return dir
 }()
 
-var MigrationDirectory = path.Join(Directory, "cmd", "go-news", "migrations", "development", "sqlite3")
+var MigrationDirectory = path.Join(Directory, "migrations", "development", "sqlite3")
 
 func GetDB(t *testing.T) *sql.DB {
 	db, err := sql.Open("sqlite3", ":memory:")
@@ -258,7 +334,7 @@ func MigrateUp(db *sql.DB) *sql.DB {
 func TestingGetOptions(db *sql.DB) gonews.ContainerOptions {
 	options := gonews.DefaultContainerOptions()
 	options.Debug = DEBUG
-	options.TemplateDirectory = path.Join(Directory, "cmd", "go-news", options.TemplateDirectory)
+	options.TemplateDirectory = path.Join(Directory, options.TemplateDirectory)
 	options.ConnectionFactory = func() (*sql.DB, error) {
 		return db, nil
 	}

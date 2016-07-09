@@ -1,0 +1,6 @@
+{{ template "header" . }}
+		<!-- thread list -->
+		{{range .Data.Threads -}}
+		<p class="thread">{{ template "thread_partial" . -}}</p>
+		{{- end}}
+{{ template "footer" . }}

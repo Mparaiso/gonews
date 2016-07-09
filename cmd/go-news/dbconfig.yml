@@ -1,5 +1,0 @@
-
-development:
-  dialect: sqlite3
-  datasource: db.sqlite3
-  dir: migrations/development/sqlite3
