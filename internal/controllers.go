@@ -111,6 +111,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 		return
 	case "POST":
+		c.MustGetSession(r).Set("trying to save something in session", "something")
 		var loginErrorMessage string
 		var candidate *User
 		err := r.ParseForm()
@@ -135,17 +136,21 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 				err = candidate.Authenticate(user.Password)
 				if err == nil {
 					// authenticated
-					c.MustGetSession(r).Set("user_id", candidate.ID)
-					http.Redirect(rw, r, "/", http.StatusOK)
+					c.MustGetSession(r).Set("user.ID", candidate.ID)
+					c.MustGetSession(r).Set("trying to save something in session", "something")
+					c.MustGetLogger().Debug("auth sucessful, redirecting")
+					http.Redirect(rw, r, "/", 301)
 					return
 				}
 			} else if candidate == nil {
 				loginErrorMessage = "Invalid Credentials"
 			}
 		}
+
 		rw.WriteHeader(http.StatusBadRequest)
 		registrationCSRF := c.GetCSRFProvider(r).Generate(r.RemoteAddr, "registration")
 		registrationForm := &RegistrationForm{CSRF: registrationCSRF, Name: "registration"}
+		c.MustGetLogger().Error(err)
 		err = c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
 			"LoginForm":         loginForm,
 			"RegistrationForm":  registrationForm,

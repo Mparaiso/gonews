@@ -27,6 +27,7 @@
 			</div>
 			<div class="navbar-collapse collapse">
 				<ul class="nav navbar-nav navbar-left">
+					<li><a href="/submit">submit</a></li>
 					{{ block "submitted" . }}
 					{{ end }}
 				</ul>
@@ -60,17 +61,14 @@ FOOTER
 	</main>
 	<footer class="container">
 		{{if IsDebug}}
-		<hr>
-		<details>
-			<summary>Debugging informations</summary>
-			<div></div>
+			<hr>
+			<div>Debugging informations</div>
 			<h3>Data</h3>
 			<pre><code>{{ .Data | ToJson }}</code></pre>
 			<h3>Request</h3>
 			<pre>{{.Environment.Request}}</pre>
 			<h3>Environment</h3>
 			<pre><code>{{ .Environment | ToJson }}</code></pre>
-		</details>
 		{{- end }}
 	</footer>
 </body>

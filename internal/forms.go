@@ -41,6 +41,7 @@ type LoginForm struct {
 	CSRF     string `schema:"login_csrf"`
 	Username string `schema:"login_username"`
 	Password string `schema:"login_password"`
+	Submit   string `schema:"login_submit"`
 	Errors   map[string][]string
 	model    *User
 }

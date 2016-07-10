@@ -8,10 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"time"
-
 	"github.com/gorilla/context"
-
-	"github.com/gorilla/sessions"
 )
 
 // HandlerFunc allows http.HandlerFunc to be used as
@@ -26,8 +23,8 @@ func (h HandlerFunc) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 func RefreshUserMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	session := c.MustGetSession(r)
 
-	if session.Has("user_id") {
-		userID := c.MustGetSession(r).Get("user_id").(int64)
+	if session.Has("user.ID") {
+		userID := c.MustGetSession(r).Get("user.ID").(int64)
 		user, err := c.MustGetUserRepository().GetById(userID)
 		if err == nil {
 			if user != nil {
@@ -70,15 +67,12 @@ func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 			c.GetOptions().Description,
 		},
 		CurrentUser: c.CurrentUser(),
+		Session:     c.MustGetSession(r).Values(),
 	})
 	next()
 }
 
-// CSRFMiddleWare provides a cross site request forgergy mechanism
-func CSRFMiddleWare(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	// csrfProvider := c.GetCSRFProvider()
-	next()
-}
+
 
 // SessionMiddleware provide session capabilities
 // TODO change secret key
@@ -86,16 +80,8 @@ func SessionMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, ne
 	// @see https://godoc.org/github.com/gorilla/sessions
 	// for why the use of context.Clear with github.com/gorilla/sessions
 	defer context.Clear(r)
-	session := c.MustGetSession(r)
-	// options has to be set or it will panic
-	session.SetOptions(&sessions.Options{
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		MaxAge:   60 * 60 * 24,
-		Domain:   r.URL.Host,
-	})
 
+	session := c.MustGetSession(r)
 	// Set the session in the response. We need to do this because
 	// we need to save the session BEFORE something is written to the http response
 	rw.(ResponseWriterExtraInterface).SetSession(session)
@@ -114,15 +100,22 @@ func StopWatchMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, 
 // LoggingMiddleware log each request using
 // comman log format
 func LoggingMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	rw.(ResponseWriterExtraInterface).SetLogger(c.MustGetLogger())
 	start := time.Now()
 	next()
+
 	// @see https://en.wikipedia.org/wiki/Common_Log_Format for log format
 	// @see http://httpd.apache.org/docs/1.3/logs.html#combined
 	c.MustGetLogger().Info(
 		fmt.Sprintf("%s %s %s [%s] \"%s %s %s\" %s %d \"%s\" \"%s\"",
 			r.RemoteAddr,
 			"-",
-			"-",
+			func() string {
+				if c.CurrentUser() != nil {
+					return c.CurrentUser().Username
+				}
+				return "-"
+			}(),
 			start.Format("Jan/02/2006:15:04:05 -0700 MST"),
 			r.Method,
 			r.RequestURI,

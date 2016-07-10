@@ -61,11 +61,6 @@ func (s *Stack) Build() func(...Handler) http.HandlerFunc {
 					i++
 					middlewares[i-1](container, rwn, r, next)
 
-				} else if !rwn.IsResponseWritten() {
-					// if next is called while handler has already been called
-					// and no response has been written
-					// then status No Content
-					rwn.WriteHeader(204)
 				}
 			}
 			next()

@@ -31,12 +31,15 @@ type ContainerOptions struct {
 	Slogan,
 	Description,
 	TemplateDirectory string
-	Debug               bool
-	SessionStoreFactory func() (sessions.Store, error)
-	ConnectionFactory   func() (*sql.DB, error)
-	LoggerFactory       func() (LoggerInterface, error)
-	csrfProvider        CSRFProvider
-	user                *User
+	Debug   bool
+	Session struct {
+		Name         string
+		StoreFactory func() (sessions.Store, error)
+	}
+	ConnectionFactory func() (*sql.DB, error)
+	LoggerFactory     func() (LoggerInterface, error)
+	csrfProvider      CSRFProvider
+	user              *User
 }
 
 // Container contains all the application dependencies
@@ -234,10 +237,10 @@ func (c *Container) HTTPError(rw http.ResponseWriter, r *http.Request, status in
 
 // GetSessionStore returns a session.Store
 func (c *Container) GetSessionStore() (sessions.Store, error) {
-	if c.ContainerOptions.SessionStoreFactory == nil {
+	if c.ContainerOptions.Session.StoreFactory == nil {
 		return nil, errors.New("SessionStoreFactory not defined in Container.Options")
 	}
-	return c.ContainerOptions.SessionStoreFactory()
+	return c.ContainerOptions.Session.StoreFactory()
 }
 
 // GetSession returns the session
@@ -247,10 +250,11 @@ func (c *Container) GetSession(request *http.Request) (SessionInterface, error) 
 		if err != nil {
 			return nil, err
 		}
-		session, err := NewSession(sessionStore, request, "gonews-session")
+		session, err := NewSession(sessionStore, request, c.ContainerOptions.Session.Name)
 		if err != nil {
 			return nil, err
 		}
+
 		c.session = session
 	}
 	return c.session, nil

@@ -2,11 +2,11 @@
 -- password: $2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2
 
 -- users
-INSERT INTO users(id,username,email,password) VALUES(1,"John_Doe","john.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
-INSERT INTO users(id,username,email,password) VALUES(2,"Jane_Doe","jane.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
-INSERT INTO users(id,username,email,password) VALUES(3,"Jack_Doe","jack.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
-INSERT INTO users(id,username,email,password) VALUES(4,"Jenifer_Doe","jenifer.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
-INSERT INTO users(id,username,email,password) VALUES(5,"Helena_Doe","helena.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(1,"johndoe","john.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(2,"janedoe","jane.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(3,"jackdoe","jack.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(4,"jefinerdoe","jenifer.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(5,"helenadoe","helena.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
 
 -- threads
 INSERT INTO threads(id,title,url,author_id) VALUES(1,"A new computer language","http://computer-language.acme/example.html",1);

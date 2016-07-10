@@ -100,7 +100,7 @@ func TestAppUserShow_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if expected, got := "John_Doe", doc.Find(".username").First().Text(); expected != got {
+	if expected, got := "johndoe", doc.Find(".username").First().Text(); expected != got {
 		t.Fatalf(".user text : expect '%v' , got '%v'", expected, got)
 	}
 }
@@ -165,7 +165,7 @@ func TestAppLogout(t *testing.T) {
 
 // TestAppLogin_POST_registration tests the registration process and verifies
 // the new user has been persisted into the db
-func TestAppLogin_POST_registration(t *testing.T) {
+func TestApp_Registration(t *testing.T) {
 	db := GetDB(t)
 	server := SetUp(t, db)
 	defer server.Close()
@@ -233,6 +233,7 @@ func LoginUserHelper(t *testing.T) (*sql.DB, *httptest.Server, *gonews.User, err
 	}
 	defer server.Close()
 	http.DefaultClient.Jar = NewTestCookieJar()
+
 	// test
 	res, err := http.Get(server.URL + "/login")
 	if err != nil {
@@ -258,21 +259,24 @@ func LoginUserHelper(t *testing.T) (*sql.DB, *httptest.Server, *gonews.User, err
 		"login_csrf":     {csrf},
 	}
 	res, err = http.Post(server.URL+"/login", "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
+	defer res.Body.Close()
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if expected, got := 200, res.StatusCode; expected != got {
+	if expected, got := 301, res.StatusCode; expected != got {
 		//t.Logf(" %s %s", ioutil.ReadAll(res.Body))
 		t.Fatalf("POST /login status : expected '%v' got '%v'", expected, got)
 	}
 	doc, err = goquery.NewDocumentFromResponse(res)
+
+	t.Log(doc.Html())
+
 	if err != nil {
 		t.Fatal(err)
 	}
 	selection = doc.Find(".current-user")
-	t.Log(doc.Html())
 	if expected, got := 1, selection.Length(); expected != got {
 		t.Fatalf(".current-user length : expect '%v' got '%v' ", expected, got)
 	}
@@ -287,7 +291,7 @@ func TestApp_404(t *testing.T) {
 		t.Fatal(err)
 	}
 	if exp, got := 404, resp.StatusCode; exp != got {
-		t.Fatalf(LabelExpectGotF, "Status code", exp, got)
+		t.Fatalf("Status code expected %v got %v ", exp, got)
 	}
 	doc, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
@@ -350,7 +354,7 @@ func SetUp(t *testing.T, dbs ...*sql.DB) *httptest.Server {
 		db = dbs[0]
 	}
 	MigrateUp(db)
-	app := gonews.GetApp(TestingGetOptions(db), gonews.AppOptions{})
+	app := gonews.GetApp(gonews.AppOptions{ContainerOptions: TestingGetOptions(db)})
 	server := httptest.NewServer(app)
 	logger := &log.Logger{}
 	logger.SetOutput(os.Stdout)

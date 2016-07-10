@@ -25,7 +25,7 @@ func main() {
 				return connection, connectionErr
 			}
 			// start server
-			app := gonews.GetApp(options, gonews.AppOptions{})
+			app := gonews.GetApp(gonews.AppOptions{ContainerOptions: options})
 			fmt.Printf("Server Listening On: %s\n", defaultAddress)
 			err := http.ListenAndServe(defaultAddress, app)
 			if err != nil {

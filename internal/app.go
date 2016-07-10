@@ -9,20 +9,29 @@ import (
 	"os"
 	"path"
 
-	"github.com/gorilla/securecookie"
+	// "github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 )
 
+var ZeroContainerOptions = ContainerOptions{}
 // DefaultContainerOptions returns the default ContainerOptions
 // A closure is used to generate the function which allows us
 // to have a few global variables ,like the session store or the db
 var DefaultContainerOptions = func() func() ContainerOptions {
-	secret := securecookie.GenerateRandomKey(64)
-	secretString := string(secret)
-	sessionCookieStore := sessions.NewCookieStore(secret)
+	//secret := securecookie.GenerateRandomKey(64)
 	connection, connectionErr := sql.Open("sqlite3", "db.sqlite3")
+	secret := []byte("some secret key for debugging purposes")
+	sessionCookieStore := sessions.NewFilesystemStore("./temp/", secret)
+	sessionCookieStore.Options = &sessions.Options{
+		Path:     "/",
+		HttpOnly: true,
+		// Secure:   true,
+		MaxAge: 60 * 60 * 24,
+		Domain: "localhost",
+	}
+
 	return func() ContainerOptions {
-		return ContainerOptions{
+		options := ContainerOptions{
 			Debug:             true,
 			Title:             "gonews",
 			Slogan:            "the news site for gophers",
@@ -30,20 +39,28 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 			DataSource:        "db.sqlite3",
 			Driver:            "sqlite3",
 			TemplateDirectory: "templates",
-			Secret:            secretString,
-			SessionStoreFactory: func() (sessions.Store, error) {
-				return sessionCookieStore, nil
+			Secret:            string(secret),
+			Session: struct {
+				Name         string
+				StoreFactory func() (sessions.Store, error)
+			}{
+				Name: "go-news",
+				StoreFactory: func() (sessions.Store, error) {
+					return sessionCookieStore, nil
+				},
 			},
 			ConnectionFactory: func() (*sql.DB, error) {
 				return connection, connectionErr
 			},
 		}
+		return options
 	}
 }()
 
 // AppOptions gather all the configuration options
 type AppOptions struct {
 	PublicDirectory string
+	ContainerOptions
 }
 
 // App is the application
@@ -52,7 +69,7 @@ type App struct {
 }
 
 // GetApp returns an application ready to be handled by a server
-func GetApp(options ContainerOptions, appOptions AppOptions) http.Handler {
+func GetApp(appOptions AppOptions) http.Handler {
 	// Normalize appOptions
 	if appOptions.PublicDirectory == "" {
 		wd, err := os.Getwd()
@@ -61,16 +78,16 @@ func GetApp(options ContainerOptions, appOptions AppOptions) http.Handler {
 		}
 		appOptions.PublicDirectory = path.Join(wd, "public")
 	}
+	
 	containerFactory := func() *Container {
-		return &Container{ContainerOptions: options}
+		return &Container{ContainerOptions: appOptions.ContainerOptions}
 	}
 	DefaultStack := &Stack{
 		Middlewares: []Middleware{
 			StopWatchMiddleware,   // Benchmarks the stack execution time
 			LoggingMiddleware,     // Logs each request formatted by the common log format
 			SessionMiddleware,     // Initialize the session
-			CSRFMiddleWare,        // Initiliaze the CSRF functionality
-			RefreshUserMiddleware, // Refresh an authenticated user if user_id exists in session
+			RefreshUserMiddleware, // Refresh an authenticated user if user.ID exists in session
 			TemplateMiddleware,    // Configures templates environment
 		}, ContainerFactory: containerFactory}
 	// A middleware stack with request logging

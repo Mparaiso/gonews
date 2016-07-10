@@ -14,6 +14,7 @@ type TemplateEnvironment struct {
 	Request       string
 	Description   struct{ Title, Slogan, Description string }
 	CurrentUser   *User
+	Session       map[string]interface{}
 }
 
 // TemplateProvider provides templates

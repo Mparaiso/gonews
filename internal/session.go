@@ -3,22 +3,9 @@ package gonews
 import (
 	"net/http"
 
+	"fmt"
 	"github.com/gorilla/sessions"
 )
-
-// SessionInterface was extracted from Session
-type SessionInterface interface {
-	AddFlash(value interface{}, vars ...string)
-	Flashes(vars ...string) []interface{}
-	Name() string
-	Save(r *http.Request, w http.ResponseWriter) error
-	Store() sessions.Store
-	Get(Any) Any
-	Set(Any, Any)
-	Has(Any) bool
-	Options() *sessions.Options
-	SetOptions(*sessions.Options)
-}
 
 type Session struct {
 	*sessions.Session
@@ -49,7 +36,17 @@ func (s *Session) Set(key Any, value Any) {
 	s.Session.Values[key] = value
 }
 
+// Has returns true if key exists
 func (s *Session) Has(key Any) bool {
 	_, ok := s.Session.Values[key]
 	return ok
+}
+
+// Values return a map of session values
+func (s *Session) Values() map[string]interface{} {
+	result := map[string]interface{}{}
+	for key, value := range s.Session.Values {
+		result[fmt.Sprintf("%v", key)] = value
+	}
+	return result
 }

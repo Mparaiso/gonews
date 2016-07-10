@@ -3,18 +3,29 @@
 {{/* form error list helper */}}
 {{ define "list_form_errors" -}}
 	{{ if . -}}
-		<ul class="text-error unstyled" class="form-error-list">
+		<ul class="text-danger list-unstyled unstyled" class="form-error-list">
 			{{ range . }}<li>{{.}}</li>{{ end }}
 		</ul>
 	{{- end -}}	
 {{- end }}
 <div>
+	{{ with .Data.LoginErrorMessage }}
+	<div class="text-danger">{{.}}</div>
+	{{ end }}
 	<!-- LOGIN FORM -->
 	<form name="{{.Data.LoginForm.Name}}" method="post" class="form-horizontal" action="/login" accept-charset="UTF-8" enctype="application/x-www-form-urlencoded">
-		<!-- csrf token -->
-		<input type="hidden" value="{{.Data.LoginForm.CSRF}}" required  name="login_csrf" id="login_csrf" />
+
+		
 		<fieldset>
 			<legend>Login:</legend>
+			<!-- csrf token -->
+			<div class="form-group">
+				<div class="col-sm-offset-1 col-sm-4 {{ and .Data.LoginForm.Errors.CSRF $HAS_ERROR }}" >
+					{{ template "list_form_errors" .Data.LoginForm.Errors.CSRF }}
+					<input type="hidden" value="{{- .Data.LoginForm.CSRF -}}" required  name="login_csrf" id="login_csrf" />
+				</div>
+			</div>
+			<!-- username -->
 			<div class="form-group">
 				<label for="username" class="control-label col-sm-1">
 						username: 
@@ -35,7 +46,7 @@
 			</div>
 			<div class="form-group class=" control-label="col-sm-1">
 				<div class="col-sm-offset-1 col-sm-2">
-					<input class="btn btn-default" required type="submit" name="submit" value="Login_submit" />
+					<input class="btn btn-default" required type="submit" name="login_submit" id="login_submit" value="Login" />
 				</div>
 			</div>
 		</fieldset>
