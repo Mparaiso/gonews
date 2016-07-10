@@ -12,7 +12,6 @@ import (
 // ThreadIndexController displays a list of links
 func ThreadIndexController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	var threads Threads
-
 	repository, err := c.GetThreadRepository()
 	if err == nil {
 		threads, err = repository.GetThreadsOrderedByVoteCount(100, 0)
@@ -89,9 +88,9 @@ func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request,
 
 // LogoutController logs out a user
 func LogoutController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	c.MustGetSession().Set("user_id", nil)
+	c.MustGetSession().Delete("user.ID")
 	c.SetCurrentUser(nil)
-	http.Redirect(rw, r, "/", http.StatusOK)
+	c.HTTPRedirect("/", 301)
 }
 
 // LoginController displays the login/signup page
@@ -111,7 +110,6 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 		return
 	case "POST":
-		c.MustGetSession().Set("trying to save something in session", "something")
 		var loginErrorMessage string
 		var candidate *User
 		err := r.ParseForm()
@@ -137,9 +135,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 				if err == nil {
 					// authenticated
 					c.MustGetSession().Set("user.ID", candidate.ID)
-					c.MustGetSession().Set("trying to save something in session", "something")
-					c.MustGetLogger().Debug("auth sucessful, redirecting")
-					http.Redirect(rw, r, "/", 301)
+					c.HTTPRedirect("/", 301)
 					return
 				}
 			} else if candidate == nil {
@@ -197,7 +193,7 @@ func RegistrationController(c *Container, rw http.ResponseWriter, r *http.Reques
 		return
 	}
 	c.MustGetSession().AddFlash("Registration Successful, please login", "success")
-	http.Redirect(rw, r, "/login", http.StatusCreated)
+	c.HTTPRedirect("/login", 301)
 }
 
 // UserShowController displays the user's informations

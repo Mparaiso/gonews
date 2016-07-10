@@ -1,6 +1,6 @@
 // @Copyright (c) 2016 mparaiso <mparaiso@online.fr>  All rights reserved.
 
-package main_test
+package gonews_test
 
 import (
 	"database/sql"
@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
+	// "path"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
@@ -22,6 +22,8 @@ import (
 	"strings"
 	"sync"
 )
+
+var DEBUG = false
 
 func TestAppIndex(t *testing.T) {
 	server := SetUp(t)
@@ -233,7 +235,7 @@ func LoginUserHelper(t *testing.T) (*sql.DB, *httptest.Server, *gonews.User, err
 	}
 	defer server.Close()
 	http.DefaultClient.Jar = NewTestCookieJar()
-
+	http.DefaultClient.CheckRedirect = nil
 	// test
 	res, err := http.Get(server.URL + "/login")
 	if err != nil {
@@ -303,8 +305,6 @@ func TestApp_404(t *testing.T) {
 	}
 }
 
-var DEBUG = false
-
 const StatusShouldF = "Status code should be 200, got %d"
 
 const LabelExpectGotF = "'%s': expected %v, got %v"
@@ -318,7 +318,7 @@ var Directory = func() string {
 	return dir
 }()
 
-var MigrationDirectory = path.Join(Directory, "migrations", "development", "sqlite3")
+// var MigrationDirectory = path.Join(path.Clean(Directory), "..", "migrations", "development", "sqlite3")
 
 func GetDB(t *testing.T) *sql.DB {
 	db, err := sql.Open("sqlite3", ":memory:")
@@ -328,20 +328,21 @@ func GetDB(t *testing.T) *sql.DB {
 	return db
 }
 
-func MigrateUp(db *sql.DB) *sql.DB {
-	_, err := migrate.Exec(db, "sqlite3", migrate.FileMigrationSource{MigrationDirectory}, migrate.Up)
+func MigrateUp(db *sql.DB, t *testing.T) *sql.DB {
+	_, err := migrate.Exec(db, "sqlite3", migrate.FileMigrationSource{"./../migrations/development/sqlite3"}, migrate.Up)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return db
 }
-func TestingGetOptions(db *sql.DB) gonews.ContainerOptions {
+func GetContainerOptions(db *sql.DB) gonews.ContainerOptions {
 	options := gonews.DefaultContainerOptions()
 	options.Debug = DEBUG
-	options.TemplateDirectory = path.Join(Directory, options.TemplateDirectory)
+	options.TemplateDirectory = "./../" + options.TemplateDirectory
 	options.ConnectionFactory = func() (*sql.DB, error) {
 		return db, nil
 	}
+	options.LogLevel = gonews.OFF
 	return options
 }
 
@@ -353,8 +354,8 @@ func SetUp(t *testing.T, dbs ...*sql.DB) *httptest.Server {
 	} else {
 		db = dbs[0]
 	}
-	MigrateUp(db)
-	app := gonews.GetApp(gonews.AppOptions{ContainerOptions: TestingGetOptions(db)})
+	MigrateUp(db, t)
+	app := gonews.GetApp(gonews.AppOptions{ContainerOptions: GetContainerOptions(db)})
 	server := httptest.NewServer(app)
 	logger := &log.Logger{}
 	logger.SetOutput(os.Stdout)

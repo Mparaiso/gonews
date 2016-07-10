@@ -1,8 +1,9 @@
 package gonews
 
 import (
-	"github.com/gorilla/sessions"
 	"net/http"
+
+	"github.com/gorilla/sessions"
 )
 
 // LoggerInterface defines a logger
@@ -18,15 +19,15 @@ type LoggerInterface interface {
 type ResponseWriterExtra interface {
 	http.ResponseWriter
 	IsResponseWritten() bool
-	SetSession(SessionInterface)
-	Session() SessionInterface
+	SetSession(SessionWrapper)
+	Session() SessionWrapper
 	HasSession() bool
 	GetCurrentSize() int
 	SetLogger(LoggerInterface)
 }
 
 // SessionInterface was extracted from Session
-type SessionInterface interface {
+type SessionWrapper interface {
 	AddFlash(value interface{}, vars ...string)
 	Flashes(vars ...string) []interface{}
 	Name() string
@@ -39,6 +40,7 @@ type SessionInterface interface {
 	SetOptions(*sessions.Options)
 	Values() map[interface{}]interface{}
 	ValuesString() map[string]interface{}
+	Delete(interface{})
 }
 
 // Form interface is a form

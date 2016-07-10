@@ -9,7 +9,7 @@ import (
 
 // DefaultCSRFProvider implements CSRFProvider
 type DefaultCSRFProvider struct {
-	Session SessionInterface
+	Session SessionWrapper
 	Secret  string
 }
 

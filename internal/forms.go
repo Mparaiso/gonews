@@ -18,6 +18,7 @@ type RegistrationForm struct {
 	Password             string `schema:"registration_password"`
 	PasswordConfirmation string `schema:"registration_password_confirmation"`
 	Email                string `schema:"registration_email"`
+	Submit               string `schema:"registration_submit"`
 	Errors               map[string][]string
 }
 

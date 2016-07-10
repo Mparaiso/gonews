@@ -31,7 +31,8 @@ type ContainerOptions struct {
 	Slogan,
 	Description,
 	TemplateDirectory string
-	Debug   bool
+	Debug bool
+	LogLevel
 	Session struct {
 		Name         string
 		StoreFactory func() (sessions.Store, error)
@@ -50,7 +51,8 @@ type Container struct {
 	threadRepository *ThreadRepository
 	userRepository   *UserRepository
 	template         TemplateProvider
-	session          SessionInterface
+	session          SessionWrapper
+	sessionStore     sessions.Store
 	request          *http.Request
 	response         ResponseWriterExtra
 }
@@ -216,7 +218,12 @@ func (c *Container) GetLogger() (LoggerInterface, error) {
 		} else {
 			logger := &log.Logger{}
 			logger.SetOutput(os.Stdout)
-			c.logger = &Logger{logger, c.Debug}
+			if c.ContainerOptions.Debug == true {
+				c.logger = NewDefaultLogger(ALL)
+			} else {
+				c.logger = NewDefaultLogger(c.ContainerOptions.LogLevel)
+			}
+
 		}
 	}
 	return c.logger, nil
@@ -229,6 +236,14 @@ func (c *Container) MustGetLogger() LoggerInterface {
 		panic(err)
 	}
 	return logger
+}
+
+// HTTPRedirect redirects a request
+func (c *Container) HTTPRedirect(url string, status int) {
+	if c.session != nil {
+		c.session.Save(c.request, c.response)
+	}
+	http.Redirect(c.response, c.request, url, status)
 }
 
 // HTTPError writes an error to the response
@@ -262,12 +277,20 @@ func (c *Container) GetSessionStore() (sessions.Store, error) {
 	if c.ContainerOptions.Session.StoreFactory == nil {
 		return nil, errors.New("SessionStoreFactory not defined in Container.Options")
 	}
-	return c.ContainerOptions.Session.StoreFactory()
+	if c.sessionStore == nil {
+		var err error
+		c.sessionStore, err = c.ContainerOptions.Session.StoreFactory()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.sessionStore, nil
 }
 
 // GetSession returns the session
-func (c *Container) GetSession() (SessionInterface, error) {
+func (c *Container) GetSession() (SessionWrapper, error) {
 	if c.session == nil {
+		c.MustGetLogger().Debug("session is nil,creating a new one")
 		sessionStore, err := c.GetSessionStore()
 		if err != nil {
 			return nil, err
@@ -278,13 +301,20 @@ func (c *Container) GetSession() (SessionInterface, error) {
 		}
 
 		c.session = session
+		c.session.SetOptions(&sessions.Options{
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   true,
+			MaxAge:   60 * 60 * 24,
+			Domain:   c.Request().URL.Host,
+		})
 		c.response.SetSession(c.session)
 	}
 	return c.session, nil
 }
 
 // MustGetSession panics on error
-func (c *Container) MustGetSession() SessionInterface {
+func (c *Container) MustGetSession() SessionWrapper {
 	session, err := c.GetSession()
 	if err != nil {
 		panic(err)

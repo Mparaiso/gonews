@@ -33,7 +33,13 @@
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					{{ with .Environment.CurrentUser }}
-					<li class="current-user"><a href="/user?id={{.ID}}">{{.Username}}</a>({{.Karma}})</li>
+					<li class="current-user"><a href="/user?id={{.ID}}">{{.Username}} ({{.Karma}})</a></li>
+					<li class="navbar-text"> | </a>
+					<li>
+					<form class="navbar-form" action="/logout" method="POST">
+					<input type="submit" value="logout" class="btn btn-link"/>
+					</form>
+					<li>
 					{{ else }}
 					<li class="login"><a href="/login">Login</a></li>
 					{{ end }}

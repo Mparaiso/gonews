@@ -1,4 +1,4 @@
-package main_test
+package gonews_test
 
 import (
 	"fmt"

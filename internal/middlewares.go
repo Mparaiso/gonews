@@ -5,10 +5,11 @@ import (
 
 	"errors"
 	"fmt"
-	"github.com/gorilla/context"
 	"net/http"
 	"net/http/httputil"
 	"time"
+
+	"github.com/gorilla/context"
 )
 
 // HandlerFunc allows http.HandlerFunc to be used as
@@ -67,7 +68,7 @@ func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 			c.GetOptions().Description,
 		},
 		CurrentUser: c.CurrentUser(),
-		// Session:     c.MustGetSession().ValuesString(),
+		Session:     c.MustGetSession().ValuesString(),
 	})
 	next()
 }
@@ -90,9 +91,9 @@ func StopWatchMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, 
 	c.MustGetLogger().Debug(fmt.Sprintf("Request executed in %s", duration))
 }
 
-// LoggingMiddleware log each request using
+// LoggerMiddleware log each request using
 // comman log format
-func LoggingMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+func LoggerMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	rw.(ResponseWriterExtra).SetLogger(c.MustGetLogger())
 	start := time.Now()
 	next()

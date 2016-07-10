@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-var ZeroContainerOptions = ContainerOptions{}
 // DefaultContainerOptions returns the default ContainerOptions
 // A closure is used to generate the function which allows us
 // to have a few global variables ,like the session store or the db
@@ -21,13 +20,13 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 	//secret := securecookie.GenerateRandomKey(64)
 	connection, connectionErr := sql.Open("sqlite3", "db.sqlite3")
 	secret := []byte("some secret key for debugging purposes")
-	sessionCookieStore := sessions.NewFilesystemStore("./temp/", secret)
+	sessionCookieStore := sessions.NewCookieStore(secret)
 	sessionCookieStore.Options = &sessions.Options{
 		Path:     "/",
 		HttpOnly: true,
-		// Secure:   true,
-		MaxAge: 60 * 60 * 24,
-		Domain: "localhost",
+		Secure:   true,
+		MaxAge:   60 * 60 * 24,
+		Domain:   "localhost",
 	}
 
 	return func() ContainerOptions {
@@ -78,14 +77,14 @@ func GetApp(appOptions AppOptions) http.Handler {
 		}
 		appOptions.PublicDirectory = path.Join(wd, "public")
 	}
-	
+
 	containerFactory := func() *Container {
 		return &Container{ContainerOptions: appOptions.ContainerOptions}
 	}
 	DefaultStack := &Stack{
 		Middlewares: []Middleware{
 			StopWatchMiddleware,   // Benchmarks the stack execution time
-			LoggingMiddleware,     // Logs each request formatted by the common log format
+			LoggerMiddleware,      // Logs each request formatted by the common log format
 			SessionMiddleware,     // Initialize the session
 			RefreshUserMiddleware, // Refresh an authenticated user if user.ID exists in session
 			TemplateMiddleware,    // Configures templates environment

@@ -10,7 +10,7 @@ import (
 type DefaultResponseWriterExtra struct {
 	http.ResponseWriter
 	Request            *http.Request
-	sessionInterface   SessionInterface
+	session            SessionWrapper
 	hasWrittenResponse bool
 	currentSize        int
 	logger             LoggerInterface
@@ -18,8 +18,8 @@ type DefaultResponseWriterExtra struct {
 }
 
 // Session returns a SessionInterface
-func (rw *DefaultResponseWriterExtra) Session() SessionInterface {
-	return rw.sessionInterface
+func (rw *DefaultResponseWriterExtra) Session() SessionWrapper {
+	return rw.session
 }
 
 // SetLogger sets the logger
@@ -28,13 +28,13 @@ func (rw *DefaultResponseWriterExtra) SetLogger(logger LoggerInterface) {
 }
 
 // SetSession sets the session
-func (rw *DefaultResponseWriterExtra) SetSession(session SessionInterface) {
-	rw.sessionInterface = session
+func (rw *DefaultResponseWriterExtra) SetSession(session SessionWrapper) {
+	rw.session = session
 }
 
 // HasSession returns true if rw has a session
 func (rw *DefaultResponseWriterExtra) HasSession() bool {
-	return rw.sessionInterface != nil
+	return rw.session != nil
 }
 
 // SetWrittenResponse returns true if a response has been written
@@ -57,9 +57,6 @@ func (rw *DefaultResponseWriterExtra) debug(messages ...interface{}) {
 func (rw *DefaultResponseWriterExtra) Write(b []byte) (size int, err error) {
 	rw.Once.Do(func() {
 		if rw.HasSession() {
-			rw.debug("Trying to save the current session")
-			rw.debug(fmt.Sprintf(" %#v ", rw.Session().Values()))
-
 			err := rw.Session().Save(rw.Request, rw.ResponseWriter)
 			if err != nil {
 				rw.error("Error saving the session ", err)

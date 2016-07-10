@@ -1,12 +1,11 @@
-package main_test
+package gonews_test
 
 import "testing"
 import gonews "github.com/mparaiso/go-news/internal"
 
 func TestThreadRepository_GetByAuthorID(t *testing.T) {
-	// DEBUG = true
-	db := MigrateUp(GetDB(t))
-	threadRepository := &gonews.ThreadRepository{DB: db, Logger: gonews.NewDefaultLogger(DEBUG)}
+	db := MigrateUp(GetDB(t), t)
+	threadRepository := &gonews.ThreadRepository{DB: db, Logger: gonews.NewDefaultLogger(gonews.OFF)}
 	threads, err := threadRepository.GetByAuthorID(1)
 	if err != nil {
 		t.Fatal(err)

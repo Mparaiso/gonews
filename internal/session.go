@@ -4,53 +4,58 @@ import (
 	"net/http"
 
 	"fmt"
+
 	"github.com/gorilla/sessions"
 )
 
-type Session struct {
+// Session implementing SessionInterface
+type DefaultSessionWrapper struct {
 	*sessions.Session
 }
 
 // NewSession create a new session form a store
-func NewSession(store sessions.Store, request *http.Request, name string) (SessionInterface, error) {
+func NewSession(store sessions.Store, request *http.Request, name string) (SessionWrapper, error) {
 	session, err := store.Get(request, name)
 	if err != nil {
 		return nil, err
 	}
-	return &Session{session}, nil
+	return &DefaultSessionWrapper{session}, nil
 }
 
-func (s *Session) Options() *sessions.Options {
+func (s *DefaultSessionWrapper) Options() *sessions.Options {
 	return s.Session.Options
 }
 
-func (s *Session) SetOptions(o *sessions.Options) {
+func (s *DefaultSessionWrapper) SetOptions(o *sessions.Options) {
 	s.Session.Options = o
 }
 
 // Get gets a session value
-func (s *Session) Get(key interface{}) interface{} {
+func (s *DefaultSessionWrapper) Get(key interface{}) interface{} {
 	return s.Session.Values[key]
 }
 
 // Set sets a session value
-func (s *Session) Set(key interface{}, value interface{}) {
+func (s *DefaultSessionWrapper) Set(key interface{}, value interface{}) {
 	s.Session.Values[key] = value
 }
 
 // Has returns true if key exists
-func (s *Session) Has(key interface{}) bool {
+func (s *DefaultSessionWrapper) Has(key interface{}) bool {
 	_, ok := s.Session.Values[key]
 	return ok
 }
+func (s *DefaultSessionWrapper) Delete(key interface{}) {
+	delete(s.Session.Values, key)
+}
 
 // Values return a map of session values
-func (s *Session) Values() map[interface{}]interface{} {
+func (s *DefaultSessionWrapper) Values() map[interface{}]interface{} {
 	return s.Session.Values
 }
 
 // ValuesString return a map of session values for debugging purposes
-func (s *Session) ValuesString() map[string]interface{} {
+func (s *DefaultSessionWrapper) ValuesString() map[string]interface{} {
 	result := map[string]interface{}{}
 	for key, value := range s.Session.Values {
 		result[fmt.Sprintf("%v", key)] = value
