@@ -52,15 +52,16 @@ func (s *Stack) Build() func(...Handler) http.HandlerFunc {
 				s.ContainerFactory = func() *Container { return new(Container) }
 			}
 			container := s.ContainerFactory()
-			rwn := &ResponseWriterExtra{ResponseWriter: rw, Request: r}
+			rwe := &DefaultResponseWriterExtra{ResponseWriter: rw, Request: r}
 			container.SetRequest(r)
+			container.SetResponse(rwe)
 			var i int
 			var next func()
 
 			next = func() {
 				if len(middlewares) > i {
 					i++
-					middlewares[i-1](container, rwn, r, next)
+					middlewares[i-1](container, rwe, r, next)
 
 				}
 			}

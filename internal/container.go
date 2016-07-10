@@ -52,6 +52,7 @@ type Container struct {
 	template         TemplateProvider
 	session          SessionInterface
 	request          *http.Request
+	response         ResponseWriterExtra
 }
 
 // Request returns an *http.Request
@@ -62,6 +63,16 @@ func (c *Container) Request() *http.Request {
 // SetRequest sets the request
 func (c *Container) SetRequest(request *http.Request) {
 	c.request = request
+}
+
+// SetResponse sets the response writer
+func (c *Container) SetResponse(response ResponseWriterExtra) {
+	c.response = response
+}
+
+// Response gets the response writer
+func (c *Container) Response() ResponseWriterExtra {
+	return c.response
 }
 
 // HasAuthenticatedUser returns true if a user has been authenticated
@@ -229,7 +240,7 @@ func (c *Container) HTTPError(rw http.ResponseWriter, r *http.Request, status in
 		// if response has been sent, just write to output for now
 		// TODO buffer response in order to handle the case where there is
 		// 		an error in the template which should lead to a status 500
-		if rw.(ResponseWriterExtraInterface).IsResponseWritten() {
+		if rw.(ResponseWriterExtra).IsResponseWritten() {
 			http.Error(rw, fmt.Sprintf("%v", message), status)
 			return
 		}
@@ -239,7 +250,7 @@ func (c *Container) HTTPError(rw http.ResponseWriter, r *http.Request, status in
 	}
 	// if not debug show a generic error message.
 	// don't show a detailed error message
-	if rw.(ResponseWriterExtraInterface).IsResponseWritten() {
+	if rw.(ResponseWriterExtra).IsResponseWritten() {
 		http.Error(rw, http.StatusText(status), status)
 		return
 	}
@@ -267,6 +278,7 @@ func (c *Container) GetSession() (SessionInterface, error) {
 		}
 
 		c.session = session
+		c.response.SetSession(c.session)
 	}
 	return c.session, nil
 }

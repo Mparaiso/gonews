@@ -67,7 +67,7 @@ func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 			c.GetOptions().Description,
 		},
 		CurrentUser: c.CurrentUser(),
-		Session:     c.MustGetSession().Values(),
+		// Session:     c.MustGetSession().ValuesString(),
 	})
 	next()
 }
@@ -78,11 +78,6 @@ func SessionMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, ne
 	// @see https://godoc.org/github.com/gorilla/sessions
 	// for why the use of context.Clear with github.com/gorilla/sessions
 	defer context.Clear(r)
-
-	session := c.MustGetSession()
-	// Set the session in the response. We need to do this because
-	// we need to save the session BEFORE something is written to the http response
-	rw.(ResponseWriterExtraInterface).SetSession(session)
 	next()
 }
 
@@ -98,7 +93,7 @@ func StopWatchMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, 
 // LoggingMiddleware log each request using
 // comman log format
 func LoggingMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	rw.(ResponseWriterExtraInterface).SetLogger(c.MustGetLogger())
+	rw.(ResponseWriterExtra).SetLogger(c.MustGetLogger())
 	start := time.Now()
 	next()
 
@@ -119,7 +114,7 @@ func LoggingMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, ne
 			r.RequestURI,
 			r.Proto,
 			rw.Header().Get("Status-Code"),
-			rw.(ResponseWriterExtraInterface).GetCurrentSize(),
+			rw.(ResponseWriterExtra).GetCurrentSize(),
 			r.Referer(),
 			r.UserAgent(),
 		))

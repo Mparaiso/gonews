@@ -7,7 +7,7 @@ import (
 )
 
 // ResponseWriterExtra can notify if a response has been written
-type ResponseWriterExtra struct {
+type DefaultResponseWriterExtra struct {
 	http.ResponseWriter
 	Request            *http.Request
 	sessionInterface   SessionInterface
@@ -18,46 +18,48 @@ type ResponseWriterExtra struct {
 }
 
 // Session returns a SessionInterface
-func (rw *ResponseWriterExtra) Session() SessionInterface {
+func (rw *DefaultResponseWriterExtra) Session() SessionInterface {
 	return rw.sessionInterface
 }
 
 // SetLogger sets the logger
-func (rw *ResponseWriterExtra) SetLogger(logger LoggerInterface) {
+func (rw *DefaultResponseWriterExtra) SetLogger(logger LoggerInterface) {
 	rw.logger = logger
 }
 
 // SetSession sets the session
-func (rw *ResponseWriterExtra) SetSession(session SessionInterface) {
+func (rw *DefaultResponseWriterExtra) SetSession(session SessionInterface) {
 	rw.sessionInterface = session
 }
 
 // HasSession returns true if rw has a session
-func (rw *ResponseWriterExtra) HasSession() bool {
+func (rw *DefaultResponseWriterExtra) HasSession() bool {
 	return rw.sessionInterface != nil
 }
 
 // SetWrittenResponse returns true if a response has been written
-func (rw *ResponseWriterExtra) SetWrittenResponse() {
+func (rw *DefaultResponseWriterExtra) SetWrittenResponse() {
 	rw.hasWrittenResponse = true
 }
 
-func (rw *ResponseWriterExtra) error(messages ...interface{}) {
+func (rw *DefaultResponseWriterExtra) error(messages ...interface{}) {
 	if rw.logger != nil {
 		rw.logger.Error(append([]interface{}{"ResponseWithExtra.Write"}, messages...)...)
 	}
 }
-func (rw *ResponseWriterExtra) debug(messages ...interface{}) {
+func (rw *DefaultResponseWriterExtra) debug(messages ...interface{}) {
 	if rw.logger != nil {
 		rw.logger.Debug(append([]interface{}{"ResponseWithExtra.Write"}, messages...)...)
 	}
 }
 
 // Write writes in the response stream
-func (rw *ResponseWriterExtra) Write(b []byte) (size int, err error) {
+func (rw *DefaultResponseWriterExtra) Write(b []byte) (size int, err error) {
 	rw.Once.Do(func() {
 		if rw.HasSession() {
 			rw.debug("Trying to save the current session")
+			rw.debug(fmt.Sprintf(" %#v ", rw.Session().Values()))
+
 			err := rw.Session().Save(rw.Request, rw.ResponseWriter)
 			if err != nil {
 				rw.error("Error saving the session ", err)
@@ -76,17 +78,17 @@ func (rw *ResponseWriterExtra) Write(b []byte) (size int, err error) {
 }
 
 // GetCurrentSize get size written in response
-func (rw *ResponseWriterExtra) GetCurrentSize() int {
+func (rw *DefaultResponseWriterExtra) GetCurrentSize() int {
 	return rw.currentSize
 }
 
 // IsResponseWritten returns true if Write has been called
-func (rw *ResponseWriterExtra) IsResponseWritten() bool {
+func (rw *DefaultResponseWriterExtra) IsResponseWritten() bool {
 	return rw.hasWrittenResponse
 }
 
 // WriteHeader writes the status code
-func (rw *ResponseWriterExtra) WriteHeader(status int) {
+func (rw *DefaultResponseWriterExtra) WriteHeader(status int) {
 	rw.Header().Set("Status-Code", fmt.Sprintf("%d", status))
 	rw.ResponseWriter.WriteHeader(status)
 }

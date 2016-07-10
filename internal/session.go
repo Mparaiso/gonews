@@ -28,22 +28,29 @@ func (s *Session) SetOptions(o *sessions.Options) {
 	s.Session.Options = o
 }
 
-func (s *Session) Get(key Any) Any {
+// Get gets a session value
+func (s *Session) Get(key interface{}) interface{} {
 	return s.Session.Values[key]
 }
 
-func (s *Session) Set(key Any, value Any) {
+// Set sets a session value
+func (s *Session) Set(key interface{}, value interface{}) {
 	s.Session.Values[key] = value
 }
 
 // Has returns true if key exists
-func (s *Session) Has(key Any) bool {
+func (s *Session) Has(key interface{}) bool {
 	_, ok := s.Session.Values[key]
 	return ok
 }
 
 // Values return a map of session values
-func (s *Session) Values() map[string]interface{} {
+func (s *Session) Values() map[interface{}]interface{} {
+	return s.Session.Values
+}
+
+// ValuesString return a map of session values for debugging purposes
+func (s *Session) ValuesString() map[string]interface{} {
 	result := map[string]interface{}{}
 	for key, value := range s.Session.Values {
 		result[fmt.Sprintf("%v", key)] = value

@@ -15,7 +15,7 @@ type LoggerInterface interface {
 
 // ResponseWriterExtraInterface is a response writer
 // enhanced with various apis
-type ResponseWriterExtraInterface interface {
+type ResponseWriterExtra interface {
 	http.ResponseWriter
 	IsResponseWritten() bool
 	SetSession(SessionInterface)
@@ -32,12 +32,13 @@ type SessionInterface interface {
 	Name() string
 	Save(r *http.Request, w http.ResponseWriter) error
 	Store() sessions.Store
-	Get(Any) Any
-	Set(Any, Any)
-	Has(Any) bool
+	Get(interface{}) interface{}
+	Set(interface{}, interface{})
+	Has(interface{}) bool
 	Options() *sessions.Options
 	SetOptions(*sessions.Options)
-	Values() map[string]interface{}
+	Values() map[interface{}]interface{}
+	ValuesString() map[string]interface{}
 }
 
 // Form interface is a form
