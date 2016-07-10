@@ -51,6 +51,17 @@ type Container struct {
 	userRepository   *UserRepository
 	template         TemplateProvider
 	session          SessionInterface
+	request          *http.Request
+}
+
+// Request returns an *http.Request
+func (c *Container) Request() *http.Request {
+	return c.request
+}
+
+// SetRequest sets the request
+func (c *Container) SetRequest(request *http.Request) {
+	c.request = request
 }
 
 // HasAuthenticatedUser returns true if a user has been authenticated
@@ -170,9 +181,9 @@ func (c *Container) MustGetUserRepository() *UserRepository {
 	return r
 }
 
-func (c *Container) GetCSRFProvider(request *http.Request) CSRFProvider {
+func (c *Container) GetCSRFProvider() CSRFProvider {
 	if c.csrfProvider == nil {
-		c.csrfProvider = &DefaultCSRFProvider{c.MustGetSession(request), c.GetSecret()}
+		c.csrfProvider = &DefaultCSRFProvider{c.MustGetSession(), c.GetSecret()}
 	}
 	return c.csrfProvider
 }
@@ -244,13 +255,13 @@ func (c *Container) GetSessionStore() (sessions.Store, error) {
 }
 
 // GetSession returns the session
-func (c *Container) GetSession(request *http.Request) (SessionInterface, error) {
+func (c *Container) GetSession() (SessionInterface, error) {
 	if c.session == nil {
 		sessionStore, err := c.GetSessionStore()
 		if err != nil {
 			return nil, err
 		}
-		session, err := NewSession(sessionStore, request, c.ContainerOptions.Session.Name)
+		session, err := NewSession(sessionStore, c.Request(), c.ContainerOptions.Session.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -261,8 +272,8 @@ func (c *Container) GetSession(request *http.Request) (SessionInterface, error) 
 }
 
 // MustGetSession panics on error
-func (c *Container) MustGetSession(request *http.Request) SessionInterface {
-	session, err := c.GetSession(request)
+func (c *Container) MustGetSession() SessionInterface {
+	session, err := c.GetSession()
 	if err != nil {
 		panic(err)
 	}

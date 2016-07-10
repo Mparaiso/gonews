@@ -89,7 +89,7 @@ func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request,
 
 // LogoutController logs out a user
 func LogoutController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	c.MustGetSession(r).Set("user_id", nil)
+	c.MustGetSession().Set("user_id", nil)
 	c.SetCurrentUser(nil)
 	http.Redirect(rw, r, "/", http.StatusOK)
 }
@@ -98,9 +98,9 @@ func LogoutController(c *Container, rw http.ResponseWriter, r *http.Request, nex
 func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	switch r.Method {
 	case "GET":
-		loginCSRF := c.GetCSRFProvider(r).Generate(r.RemoteAddr, "login")
+		loginCSRF := c.GetCSRFProvider().Generate(r.RemoteAddr, "login")
 		loginForm := &LoginForm{CSRF: loginCSRF, Name: "login"}
-		registrationCSRF := c.GetCSRFProvider(r).Generate(r.RemoteAddr, "registration")
+		registrationCSRF := c.GetCSRFProvider().Generate(r.RemoteAddr, "registration")
 		registrationForm := &RegistrationForm{CSRF: registrationCSRF, Name: "registration"}
 		err := c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
 			"LoginForm":        loginForm,
@@ -111,7 +111,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 		return
 	case "POST":
-		c.MustGetSession(r).Set("trying to save something in session", "something")
+		c.MustGetSession().Set("trying to save something in session", "something")
 		var loginErrorMessage string
 		var candidate *User
 		err := r.ParseForm()
@@ -125,7 +125,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 			c.HTTPError(rw, r, 500, err)
 			return
 		}
-		loginFormValidator := &LoginFormValidator{c.GetCSRFProvider(r), r}
+		loginFormValidator := &LoginFormValidator{c.GetCSRFProvider(), r}
 		err = loginFormValidator.Validate(loginForm)
 		// authenticate user
 		if err == nil {
@@ -136,8 +136,8 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 				err = candidate.Authenticate(user.Password)
 				if err == nil {
 					// authenticated
-					c.MustGetSession(r).Set("user.ID", candidate.ID)
-					c.MustGetSession(r).Set("trying to save something in session", "something")
+					c.MustGetSession().Set("user.ID", candidate.ID)
+					c.MustGetSession().Set("trying to save something in session", "something")
 					c.MustGetLogger().Debug("auth sucessful, redirecting")
 					http.Redirect(rw, r, "/", 301)
 					return
@@ -148,7 +148,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 
 		rw.WriteHeader(http.StatusBadRequest)
-		registrationCSRF := c.GetCSRFProvider(r).Generate(r.RemoteAddr, "registration")
+		registrationCSRF := c.GetCSRFProvider().Generate(r.RemoteAddr, "registration")
 		registrationForm := &RegistrationForm{CSRF: registrationCSRF, Name: "registration"}
 		c.MustGetLogger().Error(err)
 		err = c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
@@ -177,11 +177,11 @@ func RegistrationController(c *Container, rw http.ResponseWriter, r *http.Reques
 		c.HTTPError(rw, r, 500, err)
 		return
 	}
-	registrationFormValidator := NewRegistrationFormValidator(r, c.GetCSRFProvider(r), c.MustGetUserRepository())
+	registrationFormValidator := NewRegistrationFormValidator(r, c.GetCSRFProvider(), c.MustGetUserRepository())
 	validationError := registrationFormValidator.Validate(registrationForm)
 	if validationError != nil {
 		c.MustGetLogger().Error(validationError)
-		c.MustGetSession(r).AddFlash("Registration Form has errors", "errors")
+		c.MustGetSession().AddFlash("Registration Form has errors", "errors")
 		rw.WriteHeader(http.StatusBadRequest)
 		tErr := c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
 			"RegistrationForm": registrationForm,
@@ -196,7 +196,7 @@ func RegistrationController(c *Container, rw http.ResponseWriter, r *http.Reques
 		c.HTTPError(rw, r, http.StatusInternalServerError, err)
 		return
 	}
-	c.MustGetSession(r).AddFlash("Registration Successful, please login", "success")
+	c.MustGetSession().AddFlash("Registration Successful, please login", "success")
 	http.Redirect(rw, r, "/login", http.StatusCreated)
 }
 

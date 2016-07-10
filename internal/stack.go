@@ -53,6 +53,7 @@ func (s *Stack) Build() func(...Handler) http.HandlerFunc {
 			}
 			container := s.ContainerFactory()
 			rwn := &ResponseWriterExtra{ResponseWriter: rw, Request: r}
+			container.SetRequest(r)
 			var i int
 			var next func()
 

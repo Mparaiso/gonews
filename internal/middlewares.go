@@ -5,10 +5,10 @@ import (
 
 	"errors"
 	"fmt"
+	"github.com/gorilla/context"
 	"net/http"
 	"net/http/httputil"
 	"time"
-	"github.com/gorilla/context"
 )
 
 // HandlerFunc allows http.HandlerFunc to be used as
@@ -21,10 +21,10 @@ func (h HandlerFunc) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 // RefreshUserMiddleware keeps the application aware of the current user but does not authenticate or authorize
 func RefreshUserMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	session := c.MustGetSession(r)
+	session := c.MustGetSession()
 
 	if session.Has("user.ID") {
-		userID := c.MustGetSession(r).Get("user.ID").(int64)
+		userID := c.MustGetSession().Get("user.ID").(int64)
 		user, err := c.MustGetUserRepository().GetById(userID)
 		if err == nil {
 			if user != nil {
@@ -59,7 +59,7 @@ func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 	}
 
 	c.MustGetTemplate().SetEnvironment(&TemplateEnvironment{
-		FlashMessages: c.MustGetSession(r).Flashes(),
+		FlashMessages: c.MustGetSession().Flashes(),
 		Request:       requestDump,
 		Description: struct{ Title, Slogan, Description string }{
 			c.GetOptions().Title,
@@ -67,12 +67,10 @@ func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 			c.GetOptions().Description,
 		},
 		CurrentUser: c.CurrentUser(),
-		Session:     c.MustGetSession(r).Values(),
+		Session:     c.MustGetSession().Values(),
 	})
 	next()
 }
-
-
 
 // SessionMiddleware provide session capabilities
 // TODO change secret key
@@ -81,7 +79,7 @@ func SessionMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, ne
 	// for why the use of context.Clear with github.com/gorilla/sessions
 	defer context.Clear(r)
 
-	session := c.MustGetSession(r)
+	session := c.MustGetSession()
 	// Set the session in the response. We need to do this because
 	// we need to save the session BEFORE something is written to the http response
 	rw.(ResponseWriterExtraInterface).SetSession(session)
