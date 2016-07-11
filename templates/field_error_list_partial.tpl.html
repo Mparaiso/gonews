@@ -1,0 +1,7 @@
+{{ define "list_form_errors" -}}
+	{{ if . -}}
+		<ul class="text-danger list-unstyled unstyled" class="form-error-list">
+			{{ range . }}<li>{{.}}</li>{{ end }}
+		</ul>
+	{{- end -}}	
+{{- end }}
