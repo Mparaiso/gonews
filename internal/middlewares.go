@@ -12,12 +12,16 @@ import (
 	"github.com/gorilla/context"
 )
 
-// HandlerFunc allows http.HandlerFunc to be used as
-// http.Handler
-type HandlerFunc func(http.ResponseWriter, *http.Request)
-
-func (h HandlerFunc) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	h(rw, r)
+// AuthenticatedUserOnlyMiddleware filters out non authenticated users
+func AuthenticatedUserOnlyMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	if c.CurrentUser() == nil {
+		c.MustGetSession().Delete("user.ID")
+		c.MustGetSession().AddFlash(http.StatusText(http.StatusUnauthorized), "danger")
+		c.ResponseWriter().WriteHeader(401)
+		LoginController(c, rw, r, next)
+		return
+	}
+	next()
 }
 
 // RefreshUserMiddleware keeps the application aware of the current user but does not authenticate or authorize
@@ -60,8 +64,13 @@ func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 	}
 
 	c.MustGetTemplate().SetEnvironment(&TemplateEnvironment{
-		FlashMessages: c.MustGetSession().Flashes(),
-		Request:       requestDump,
+		FlashMessages: map[string][]interface{}{
+			"error":   c.MustGetSession().Flashes("error"),
+			"success": c.MustGetSession().Flashes("success"),
+			"info":    c.MustGetSession().Flashes("info"),
+			"notice":  c.MustGetSession().Flashes("notice"),
+		},
+		Request: requestDump,
 		Description: struct{ Title, Slogan, Description string }{
 			c.GetOptions().Title,
 			c.GetOptions().Slogan,

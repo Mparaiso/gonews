@@ -1,3 +1,10 @@
+/* Customize container */
+@media (min-width: 768px) {
+  .container {
+    max-width: 730px;
+  }
+}
+
 body{
 	font-family: 'Open Sans',Verdana,sans-serif;
 }

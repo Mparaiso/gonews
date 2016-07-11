@@ -1,12 +1,68 @@
 package gonews_test
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"database/sql"
-	"github.com/mparaiso/go-news/internal"
 	"net/http"
+
+	"github.com/mparaiso/go-news/internal"
 )
+
+/*
+	Scenario:
+
+	Given a submission form validator
+
+	If a valid submission form is validated
+	It should return no errors
+*/
+func TestSubmissionFormValidator(t *testing.T) {
+	// Given a submission form validator
+	req, err := http.NewRequest("POST", "http://foo.com/submit", strings.NewReader("request body"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	validator := &gonews.SubmissionFormValidator{TestCSRFProvider{}, req}
+	submissionForm := &gonews.SubmissionForm{Name: "Submission form", CSRF: TestCSRFProvider{}.Generate("", ""), Title: "The Title", URL: "foo.bar.com"}
+	// If a valid submission form is validated
+	err = validator.Validate(submissionForm)
+	// It should return no errors
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func ExampleIsURL() {
+	for _, url := range []string{
+		"foo.com",
+		"at.baz.co.uk/foo.com/?&bar=booo",
+		"http://baz.com/bar?id=bizz",
+		"http://presentation.opex.com/index.html?foobar=biz#baz",
+	} {
+		fmt.Println(gonews.IsURL(url))
+
+	}
+
+	for _, url := range []string{
+		"foo",
+		"biz/baz",
+		"something.com/ with space",
+	} {
+		fmt.Println(gonews.IsURL(url))
+	}
+
+	// Output:
+	// true
+	// true
+	// true
+	// true
+	// false
+	// false
+	// false
+}
 
 func Test_UserValidator_Validate_valid_user(t *testing.T) {
 	user := &gonews.User{Username: "Bill_Doe", Email: "bill.doe@acme.com"}

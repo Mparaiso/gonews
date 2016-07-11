@@ -31,7 +31,8 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 
 	return func() ContainerOptions {
 		options := ContainerOptions{
-			Debug:             true,
+			Debug:             false,
+			LogLevel:          INFO,
 			Title:             "gonews",
 			Slogan:            "the news site for gophers",
 			Description:       "gonews is a site where gophers publish and discuss news about the go language",
@@ -60,6 +61,7 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 type AppOptions struct {
 	PublicDirectory string
 	ContainerOptions
+	ContainerFactory func() *Container
 }
 
 // App is the application
@@ -77,10 +79,19 @@ func GetApp(appOptions AppOptions) http.Handler {
 		}
 		appOptions.PublicDirectory = path.Join(wd, "public")
 	}
-
-	containerFactory := func() *Container {
-		return &Container{ContainerOptions: appOptions.ContainerOptions}
+	// The containerFactory will be used to create a new container
+	// for each request, the container is then passed to all middlewares
+	if appOptions.ContainerFactory == nil {
+		appOptions.ContainerFactory = func() *Container {
+			container := &Container{
+				ContainerOptions: appOptions.ContainerOptions,
+			}
+			container.SessionProvider = NewDefaultSessionProvider(appOptions.ContainerOptions.Session.Name, container, container, container)
+			container.CSRFGeneratorProvider = NewDefaultCSRFGeneratorProvider(container, container)
+			return container
+		}
 	}
+
 	DefaultStack := &Stack{
 		Middlewares: []Middleware{
 			StopWatchMiddleware,   // Benchmarks the stack execution time
@@ -88,9 +99,10 @@ func GetApp(appOptions AppOptions) http.Handler {
 			SessionMiddleware,     // Initialize the session
 			RefreshUserMiddleware, // Refresh an authenticated user if user.ID exists in session
 			TemplateMiddleware,    // Configures templates environment
-		}, ContainerFactory: containerFactory}
+		}, ContainerFactory: appOptions.ContainerFactory}
 	// A middleware stack with request logging
-	Default := DefaultStack.Build()
+	Default := DefaultStack.Clone().Build()
+	AuthenticatedUsersOnly := DefaultStack.Clone().Push(AuthenticatedUserOnlyMiddleware).Build()
 	// A middleware stack that extends Zero and handles requests for missing pages
 	app := &App{http.NewServeMux()}
 	// homepage
@@ -103,7 +115,9 @@ func GetApp(appOptions AppOptions) http.Handler {
 	app.HandleFunc("/logout", Default(PostOnlyMiddleware, LogoutController))
 	// user
 	app.HandleFunc("/user", Default(UserShowController))
-	// submitted user stories
+	// submit
+	app.HandleFunc("/submit", AuthenticatedUsersOnly(SubmissionController))
+	// submitted
 	app.HandleFunc("/submitted", Default(ThreadListByAuthorIDController))
 	// registration
 	app.HandleFunc("/register", Default(PostOnlyMiddleware, RegistrationController))

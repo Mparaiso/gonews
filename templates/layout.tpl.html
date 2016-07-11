@@ -49,10 +49,10 @@
 	</nav>
 	{{ end }}
 	<main class="container">
-		{{ if .Environment.FlashMessages }}
+		{{ with .Environment.FlashMessages }}
 			<ul class="unstyled flash-messages">
-			{{ range  $key,$message := .Environment.FlashMessages }}
-				<li class="flash-{{$key}}">{{$message}}</li>
+			{{ range  $key,$message := . }}
+				<li class="flash-{{$key}} text-{{$key}}">{{$message}}</li>
 			{{ end }}
 			<ul>
 		{{ end }}

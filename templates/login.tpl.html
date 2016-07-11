@@ -1,13 +1,6 @@
 {{ template "header" . }} 
 {{ $HAS_ERROR := "has-error" }}
 {{/* form error list helper */}}
-{{ define "list_form_errors" -}}
-	{{ if . -}}
-		<ul class="text-danger list-unstyled unstyled" class="form-error-list">
-			{{ range . }}<li>{{.}}</li>{{ end }}
-		</ul>
-	{{- end -}}	
-{{- end }}
 <div>
 	{{ with .Data.LoginErrorMessage }}
 	<div class="text-danger">{{.}}</div>

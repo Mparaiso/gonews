@@ -1,0 +1,52 @@
+{{ template "header" . }}
+{{ $hasError := "has-error" }}
+<form role="form" action="/submit" method="POST" name="submission" class="form-horizontal">
+	<fieldset><legend>Submit a new story</legend>
+		<!-- csrf -->
+		<div class="form-group">
+			<div class="col-md-6 col-md-offset-1">
+				{{ template "list_form_errors" .Data.SubmissionForm.Errors.CSRF }}
+				<input type="hidden" name="submission_csrf" value="{{- .Data.SubmissionForm.CSRF -}}" id="submission_csrf"/>
+			</div>
+		</div>
+		<!-- title -->
+		<div class="form-group">
+			<label for="title" class="control-label col-md-1">Title:</label>
+			<div class="col-md-6">
+			
+			{{ template "list_form_errors" .Data.SubmissionForm.Errors.Title }}
+				<input type="text"  class="form-control {{ and .Data.SubmissionForm.Errors.Title $hasError }}"
+					 value="{{.Data.SubmissionForm.Title}}" name="submission_title"/>
+			</div>
+		</div>
+		<!-- url -->
+		<div class="form-group" >
+			<label class="control-label col-md-1" for="url">Link:</label>
+			<div class="col-md-6">
+				{{ template "list_form_errors" .Data.SubmissionForm.Errors.URL }}
+				<input type="text" class="form-control {{ and .Data.SubmissionForm.Errors.URL $hasError }}" value="{{.Data.SubmissionForm.URL}}" name="submission_url"/>
+				<span class="help-block">Leave url blank to submit a question for discussion. If there is no url, the text (if any) will appear at the top of the thread.</span>
+			</div>
+		</div>
+		<div class="form-group" >
+			<div class="col-md-offset-1 col-md-6">
+				or
+			</div>
+		</div>
+		<!-- text -->
+		<div class="form-group" >
+			<label class="control-label col-md-1" for="text">Text:</label>
+			<div class="col-md-6">
+				{{ template "list_form_errors" .Data.SubmissionForm.Errors.Content }}
+				<textarea rows="6" class="form-control {{ and .Data.SubmissionForm.Errors.Content $hasError }} "  name="submission_content">{{- .Data.SubmissionForm.Content -}}</textarea>
+			</div>
+		</div>
+		<!-- submit -->
+		<div class="form-group" >
+			<div class="col-md-offset-1 col-md-4">
+				<input type="submit" class="btn btn-default" value="Submit" id="submission_submit" name="submission_submit"/>
+			</div>
+		</div>
+	</fieldset>
+</form>
+{{ template "footer" . }}

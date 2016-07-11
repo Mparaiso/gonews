@@ -8,13 +8,13 @@ import (
 // TODO fix tokens and sessions
 
 // DefaultCSRFProvider implements CSRFProvider
-type DefaultCSRFProvider struct {
+type DefaultCSRFGenerator struct {
 	Session SessionWrapper
 	Secret  string
 }
 
 // Generate generates a new token
-func (d *DefaultCSRFProvider) Generate(userID, actionID string) string {
+func (d *DefaultCSRFGenerator) Generate(userID, actionID string) string {
 	t := xsrftoken.Generate(d.Secret, userID, actionID)
 	// tokenNameInSession := fmt.Sprintf("%v-%v", userID, actionID)
 	// d.Session.Set(tokenNameInSession, t)
@@ -22,7 +22,7 @@ func (d *DefaultCSRFProvider) Generate(userID, actionID string) string {
 }
 
 // Valid valides a token
-func (d *DefaultCSRFProvider) Valid(token, userID, actionID string) bool {
+func (d *DefaultCSRFGenerator) Valid(token, userID, actionID string) bool {
 	//tokenNameInSession := fmt.Sprintf("%v-%v", userID, actionID)
 	// t := fmt.Sprint(d.Session.Get(tokenNameInSession))
 	// d.Session.Set(tokenNameInSession, nil)

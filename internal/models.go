@@ -12,8 +12,9 @@ type User struct {
 	Username string
 	Password string
 	Email    string
-	Created  time.Time
-	Updated  time.Time
+
+	Created time.Time
+	Updated time.Time
 	// Virtual
 	Karma int
 }
@@ -65,6 +66,7 @@ type Thread struct {
 	ID      int64
 	Title   string
 	URL     string
+	Content string
 	Created time.Time
 	Updated time.Time
 	// Score is a virtual column, counts all the votes for a thread

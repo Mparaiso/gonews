@@ -49,8 +49,8 @@ type Form interface {
 	HandleRequest(r *http.Request) error
 }
 
-// CSRFProvider provide csrf tokens
-type CSRFProvider interface {
+// CSRFGenerator generates and validate csrf tokens
+type CSRFGenerator interface {
 	Generate(userID, actionID string) string
 	Valid(token, userID, actionID string) bool
 }

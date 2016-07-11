@@ -163,6 +163,21 @@ func (t ThreadRepository) log(messages ...interface{}) {
 	}
 }
 
+func (t ThreadRepository) Create(thread *Thread) error {
+	query := "INSERT INTO threads(title,url,content,author_id) values(?,?,?,?);"
+	t.Logger.Debug(query, thread)
+	result, err := t.DB.Exec(query, thread.Title, thread.URL, thread.Content, thread.AuthorID)
+	if err != nil {
+		return err
+	}
+	thread.ID, err = result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetByAuthorID returns threads filtered by AuthorID
 func (t ThreadRepository) GetByAuthorID(id int64) (threads Threads, err error) {
 	// we query the database, first by search threads by author_id with the commentcount

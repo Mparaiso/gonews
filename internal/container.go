@@ -39,7 +39,7 @@ type ContainerOptions struct {
 	}
 	ConnectionFactory func() (*sql.DB, error)
 	LoggerFactory     func() (LoggerInterface, error)
-	csrfProvider      CSRFProvider
+	csrfGenerator     CSRFGenerator
 	user              *User
 }
 
@@ -51,10 +51,11 @@ type Container struct {
 	threadRepository *ThreadRepository
 	userRepository   *UserRepository
 	template         TemplateProvider
-	session          SessionWrapper
-	sessionStore     sessions.Store
-	request          *http.Request
-	response         ResponseWriterExtra
+	SessionProvider
+	sessionStore sessions.Store
+	request      *http.Request
+	response     ResponseWriterExtra
+	CSRFGeneratorProvider
 }
 
 // Request returns an *http.Request
@@ -73,7 +74,7 @@ func (c *Container) SetResponse(response ResponseWriterExtra) {
 }
 
 // Response gets the response writer
-func (c *Container) Response() ResponseWriterExtra {
+func (c *Container) ResponseWriter() ResponseWriterExtra {
 	return c.response
 }
 
@@ -194,13 +195,6 @@ func (c *Container) MustGetUserRepository() *UserRepository {
 	return r
 }
 
-func (c *Container) GetCSRFProvider() CSRFProvider {
-	if c.csrfProvider == nil {
-		c.csrfProvider = &DefaultCSRFProvider{c.MustGetSession(), c.GetSecret()}
-	}
-	return c.csrfProvider
-}
-
 // GetOptions returns the container's options
 func (c *Container) GetOptions() ContainerOptions {
 	return c.ContainerOptions
@@ -240,10 +234,12 @@ func (c *Container) MustGetLogger() LoggerInterface {
 
 // HTTPRedirect redirects a request
 func (c *Container) HTTPRedirect(url string, status int) {
-	if c.session != nil {
-		c.session.Save(c.request, c.response)
+	if session, err := c.GetSession(); err == nil {
+		session.Save(c.Request(), c.ResponseWriter())
+	} else {
+		c.MustGetLogger().Error("Container", err)
 	}
-	http.Redirect(c.response, c.request, url, status)
+	http.Redirect(c.ResponseWriter(), c.Request(), url, status)
 }
 
 // HTTPError writes an error to the response
@@ -260,7 +256,10 @@ func (c *Container) HTTPError(rw http.ResponseWriter, r *http.Request, status in
 			return
 		}
 		// if not then execute the template with the Message
-		c.MustGetTemplate().ExecuteTemplate(rw, "error.tpl.html", map[string]interface{}{"Status": status, "Message": message})
+		c.MustGetTemplate().ExecuteTemplate(rw, "error.tpl.html", map[string]interface{}{"Error": struct {
+			Status  int
+			Message interface{}
+		}{Status: status, Message: message}})
 		return
 	}
 	// if not debug show a generic error message.
@@ -269,7 +268,10 @@ func (c *Container) HTTPError(rw http.ResponseWriter, r *http.Request, status in
 		http.Error(rw, http.StatusText(status), status)
 		return
 	}
-	c.MustGetTemplate().ExecuteTemplate(rw, "error.tpl.html", map[string]interface{}{"Status": status, "Message": http.StatusText(status)})
+	c.MustGetTemplate().ExecuteTemplate(rw, "error.tpl.html", map[string]interface{}{"Error": struct {
+		Status  int
+		Message string
+	}{Status: status, Message: http.StatusText(status)}})
 }
 
 // GetSessionStore returns a session.Store
@@ -285,39 +287,4 @@ func (c *Container) GetSessionStore() (sessions.Store, error) {
 		}
 	}
 	return c.sessionStore, nil
-}
-
-// GetSession returns the session
-func (c *Container) GetSession() (SessionWrapper, error) {
-	if c.session == nil {
-		c.MustGetLogger().Debug("session is nil,creating a new one")
-		sessionStore, err := c.GetSessionStore()
-		if err != nil {
-			return nil, err
-		}
-		session, err := NewSession(sessionStore, c.Request(), c.ContainerOptions.Session.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		c.session = session
-		c.session.SetOptions(&sessions.Options{
-			Path:     "/",
-			HttpOnly: true,
-			Secure:   true,
-			MaxAge:   60 * 60 * 24,
-			Domain:   c.Request().URL.Host,
-		})
-		c.response.SetSession(c.session)
-	}
-	return c.session, nil
-}
-
-// MustGetSession panics on error
-func (c *Container) MustGetSession() SessionWrapper {
-	session, err := c.GetSession()
-	if err != nil {
-		panic(err)
-	}
-	return session
 }

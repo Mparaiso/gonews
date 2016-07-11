@@ -62,3 +62,41 @@ func (form *LoginForm) Model() *User {
 	}
 	return form.model
 }
+
+// SubmissionForm is a submission form
+type SubmissionForm struct {
+	Name    string
+	CSRF    string `schema:"submission_csrf"`
+	Title   string `schema:"submission_title"`
+	URL     string `schema:"submission_url"`
+	Content string `schema:"submission_content"`
+	Submit  string `schema:"submission_submit"`
+	Errors  map[string][]string
+	model   *Thread
+}
+
+// HandleRequest deserialize the request body into a form struct
+func (form *SubmissionForm) HandleRequest(r *http.Request) error {
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(form, r.PostForm)
+}
+
+func (form *SubmissionForm) SetModel(thread *Thread) {
+	form.model = thread
+	form.Content = thread.Content
+	form.URL = thread.URL
+	form.Title = thread.Title
+}
+
+// Model return the underlying form model
+func (form *SubmissionForm) Model() *Thread {
+	if form.model != nil {
+		form.model.Title = form.Title
+		form.model.Content = form.Content
+		form.model.URL = form.URL
+	}
+	return form.model
+}

@@ -3,6 +3,7 @@ package gonews
 import (
 	"fmt"
 	"net/http"
+
 	"regexp"
 	"strings"
 )
@@ -55,12 +56,12 @@ func (uv UserValidator) Validate(u *User) ValidationError {
 // RegistrationFormValidator is a RegistrationForm validator
 type RegistrationFormValidator struct {
 	request        *http.Request
-	csrfProvider   CSRFProvider
+	csrfProvider   CSRFGenerator
 	userRepository UserFinder
 }
 
 // NewRegistrationFormValidator creates an new RegistrationFormValidator
-func NewRegistrationFormValidator(request *http.Request, csrfProvider CSRFProvider, userFinder UserFinder) *RegistrationFormValidator {
+func NewRegistrationFormValidator(request *http.Request, csrfProvider CSRFGenerator, userFinder UserFinder) *RegistrationFormValidator {
 	return &RegistrationFormValidator{request, csrfProvider, userFinder}
 }
 
@@ -103,7 +104,7 @@ func (validator *RegistrationFormValidator) Validate(form *RegistrationForm) Val
 
 // LoginFormValidator is a validator for LoginForm
 type LoginFormValidator struct {
-	csrfProvider CSRFProvider
+	csrfProvider CSRFGenerator
 	request      *http.Request
 }
 
@@ -120,6 +121,47 @@ func (validator *LoginFormValidator) Validate(form *LoginForm) ValidationError {
 	}
 	form.Errors = errors
 	return errors
+}
+
+type SubmissionFormValidator struct {
+	CSRFGenerator
+	*http.Request
+}
+
+// Validate validates a submission form
+func (validator *SubmissionFormValidator) Validate(form *SubmissionForm) ValidationError {
+	errors := ConcreteValidationError{}
+
+	CSRFValidator("CSRF", form.CSRF, validator.CSRFGenerator, validator.Request.RemoteAddr, "submission", &errors)
+	form.CSRF = validator.CSRFGenerator.Generate(validator.Request.RemoteAddr, "submission")
+	StringNotEmptyValidator("Title", form.Title, &errors)
+	StringMaxLengthValidator("Title", form.Title, 100, &errors)
+	StringMinLengthValidator("Title", form.Title, 5, &errors)
+
+	switch {
+	case len(strings.Trim(form.Content, " ")) == 0:
+		StringNotEmptyValidator("URL", form.URL, &errors)
+		StringMinLengthValidator("URL", form.URL, 5, &errors)
+		StringMaxLengthValidator("URL", form.URL, 255, &errors)
+		URLValidator("URL", form.URL, &errors)
+	case len(strings.Trim(form.URL, " ")) == 0:
+		StringNotEmptyValidator("Content", form.Content, &errors)
+		StringMaxLengthValidator("Content", form.Content, 500, &errors)
+		StringMinLengthValidator("Content", form.Content, 30, &errors)
+	default:
+		StringMinLengthValidator("URL", form.URL, 5, &errors)
+		StringMaxLengthValidator("URL", form.URL, 255, &errors)
+		URLValidator("URL", form.URL, &errors)
+
+		StringMaxLengthValidator("Content", form.Content, 500, &errors)
+		StringMinLengthValidator("Content", form.Content, 30, &errors)
+	}
+
+	if errors.HasErrors() {
+		form.Errors = errors
+		return errors
+	}
+	return nil
 }
 
 /*
@@ -163,13 +205,21 @@ func EmailValidator(field, value string, errors ValidationError) {
 	}
 }
 
+func URLValidator(field, value string, errors ValidationError) {
+	if !IsURL(value) {
+		errors.Append(field, "should be a valid URL")
+	}
+}
+
 // CSRFValidator validates a CSRF Token
-func CSRFValidator(field string, value string, csrfProvider CSRFProvider, remoteAddr, action string, errors ValidationError) {
+func CSRFValidator(field string, value string, csrfProvider CSRFGenerator, remoteAddr, action string, errors ValidationError) {
 	if !csrfProvider.Valid(value, remoteAddr, action) {
 		errors.Append(field, "invalid token")
 	}
 }
-
+func IsURL(candidate string) bool {
+	return regexp.MustCompile(`^(https?\:\/\/)?(\w+\.)?\w+\.\w+(\.\w+)?\/?\S+$`).MatchString(candidate)
+}
 func isEmail(candidate string) bool {
 	return regexp.MustCompile(`\w+@\w+\.\w+`).MatchString(candidate)
 }

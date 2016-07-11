@@ -42,21 +42,21 @@ func (l *Logger) SetLevel(level LogLevel) {
 // Debug logs a debugging message
 func (l *Logger) Debug(messages ...interface{}) {
 	if l.level <= DEBUG {
-		l.Logger.Print(append([]interface{}{"[DEBUG] ", time.Now().Format(time_format), "\n\t"}, messages...)...)
+		l.Logger.Print(append([]interface{}{"\r[DEBUG] ", time.Now().Format(time_format), "\n\t"}, messages...)...)
 	}
 }
 
 // Info logs an info message
 func (l *Logger) Info(messages ...interface{}) {
 	if l.level <= INFO {
-		l.Logger.Print(append([]interface{}{"[INFO] ", time.Now().Format(time_format), "\n\t"}, messages...)...)
+		l.Logger.Print(append([]interface{}{"\r[INFO] ", time.Now().Format(time_format), "\n\t"}, messages...)...)
 	}
 }
 
 // Error logs an error message
 func (l *Logger) Error(messages ...interface{}) {
 	if l.level <= ERROR {
-		l.Logger.Print(append([]interface{}{"[ERROR] ", time.Now().Format(time_format), "\n\t"}, messages...)...)
+		l.Logger.Print(append([]interface{}{"\r[ERROR] ", time.Now().Format(time_format), "\n\t"}, messages...)...)
 	}
 
 }
@@ -69,6 +69,6 @@ func (l *Logger) ErrorWithStack(messages ...interface{}) {
 		buffer := make([]byte, 1<<16)
 		runtime.Stack(buffer, false)
 		//print 6 lines max
-		l.Logger.Printf("\r%s", buffer)
+		l.Logger.Printf("\r[ERROR] %s \r\t%s", time.Now().Format(time_format), buffer)
 	}
 }

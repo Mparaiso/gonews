@@ -90,16 +90,16 @@ func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request,
 func LogoutController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	c.MustGetSession().Delete("user.ID")
 	c.SetCurrentUser(nil)
-	c.HTTPRedirect("/", 301)
+	c.HTTPRedirect("/", 302)
 }
 
 // LoginController displays the login/signup page
 func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	switch r.Method {
 	case "GET":
-		loginCSRF := c.GetCSRFProvider().Generate(r.RemoteAddr, "login")
+		loginCSRF := c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "login")
 		loginForm := &LoginForm{CSRF: loginCSRF, Name: "login"}
-		registrationCSRF := c.GetCSRFProvider().Generate(r.RemoteAddr, "registration")
+		registrationCSRF := c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "registration")
 		registrationForm := &RegistrationForm{CSRF: registrationCSRF, Name: "registration"}
 		err := c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
 			"LoginForm":        loginForm,
@@ -123,7 +123,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 			c.HTTPError(rw, r, 500, err)
 			return
 		}
-		loginFormValidator := &LoginFormValidator{c.GetCSRFProvider(), r}
+		loginFormValidator := &LoginFormValidator{c.MustGetCSRFGenerator(), r}
 		err = loginFormValidator.Validate(loginForm)
 		// authenticate user
 		if err == nil {
@@ -135,7 +135,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 				if err == nil {
 					// authenticated
 					c.MustGetSession().Set("user.ID", candidate.ID)
-					c.HTTPRedirect("/", 301)
+					c.HTTPRedirect("/", 302)
 					return
 				}
 			} else if candidate == nil {
@@ -144,7 +144,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 
 		rw.WriteHeader(http.StatusBadRequest)
-		registrationCSRF := c.GetCSRFProvider().Generate(r.RemoteAddr, "registration")
+		registrationCSRF := c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "registration")
 		registrationForm := &RegistrationForm{CSRF: registrationCSRF, Name: "registration"}
 		c.MustGetLogger().Error(err)
 		err = c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
@@ -173,7 +173,7 @@ func RegistrationController(c *Container, rw http.ResponseWriter, r *http.Reques
 		c.HTTPError(rw, r, 500, err)
 		return
 	}
-	registrationFormValidator := NewRegistrationFormValidator(r, c.GetCSRFProvider(), c.MustGetUserRepository())
+	registrationFormValidator := NewRegistrationFormValidator(r, c.MustGetCSRFGenerator(), c.MustGetUserRepository())
 	validationError := registrationFormValidator.Validate(registrationForm)
 	if validationError != nil {
 		c.MustGetLogger().Error(validationError)
@@ -193,7 +193,7 @@ func RegistrationController(c *Container, rw http.ResponseWriter, r *http.Reques
 		return
 	}
 	c.MustGetSession().AddFlash("Registration Successful, please login", "success")
-	c.HTTPRedirect("/login", 301)
+	c.HTTPRedirect("/login", 302)
 }
 
 // UserShowController displays the user's informations
@@ -216,6 +216,54 @@ func UserShowController(c *Container, rw http.ResponseWriter, r *http.Request, n
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 	}
+}
+
+// SubmissionController handles submitted stories
+func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	user := c.CurrentUser()
+	if user == nil {
+		c.HTTPRedirect("/login", http.StatusUnauthorized)
+		return
+	}
+	thread := &Thread{}
+	submissionForm := &SubmissionForm{CSRF: c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "submission")}
+	submissionForm.SetModel(thread)
+	switch r.Method {
+	case "GET":
+		err := c.MustGetTemplate().ExecuteTemplate(rw, "submit.tpl.html", map[string]interface{}{
+			"SubmissionForm": submissionForm,
+		})
+		if err != nil {
+			c.MustGetLogger().Error(err)
+		}
+	case "POST":
+		err := submissionForm.HandleRequest(r)
+		if err != nil {
+			c.HTTPError(rw, r, 500, err)
+			return
+		}
+		submissionFormValidator := &SubmissionFormValidator{c.MustGetCSRFGenerator(), r}
+		err = submissionFormValidator.Validate(submissionForm)
+		if err == nil {
+			thread := submissionForm.Model()
+			thread.AuthorID = user.ID
+			err = c.MustGetThreadRepository().Create(thread)
+			if err == nil {
+				c.MustGetSession().AddFlash("Story successfully created!", "success")
+				c.HTTPRedirect(fmt.Sprintf("/thread?id=%d", thread.ID), 302)
+				return
+			}
+		}
+		c.ResponseWriter().WriteHeader(http.StatusBadRequest)
+		c.MustGetLogger().Error(err)
+		err = c.MustGetTemplate().ExecuteTemplate(rw, "submit.tpl.html", map[string]interface{}{
+			"SubmissionForm": submissionForm,
+		})
+		if err != nil {
+			c.MustGetLogger().Error(err)
+		}
+	}
+
 }
 
 // NotFoundController is a standard 404 page

@@ -10,7 +10,7 @@ import (
 // it is available as .Environment variable in all templates .
 // Data specific to a controller are available through .Data variable .
 type TemplateEnvironment struct {
-	FlashMessages []interface{}
+	FlashMessages map[string][]interface{}
 	Request       string
 	Description   struct{ Title, Slogan, Description string }
 	CurrentUser   *User

@@ -18,7 +18,8 @@ CREATE TABLE threads(
        url varchar(255) not null,
        created timestamp not null default(datetime('now')),
        updated timestamp not null default(datetime('now')),
-	   author_id int REFERENCES users(id) ON DELETE CASCADE
+	   author_id int REFERENCES users(id) ON DELETE CASCADE,
+	   content text 
 );
 
 -- comments

@@ -1,8 +1,10 @@
 {{ template "header" . }}
+	{{ with .Data.Error }}
 	<!-- error.tpl.html -->
 	<section class="lead error">
-		<strong>{{.Data.Status}}</strong>
-		{{.Data.Message}}
+		<strong class="error-status">{{.Status}}</strong>
+		<div class="error-message">{{.Message}}</div>
 	</section>
+	{{ end }}
 {{ template "footer" . }}
 
