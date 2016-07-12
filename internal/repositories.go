@@ -414,26 +414,27 @@ func (repository *CommentRepository) GetCommentsByAuthorID(id int64) (comments C
 	var (
 		rows *sql.Rows
 	)
-	query := `SELECT 
-	c.id AS ID,
-	c.parent_id AS ParentID,
-	c.author_id AS AuthorID,
-	u.username AS AuthorName,
-	c.thread_id AS ThreadID,
-	c.content AS Content,
-	c.created AS Created,
-	c.updated AS Updated,
-	SUM(cv.score) AS CommentScore
-	FROM comments c,users u 
-	JOIN comment_votes cv ON cv.comment_id = c.id
-	WHERE c.author_id = ? 
-	GROUP BY c.id
-	ORDER BY c.created DESC
-	;`
+	query := `SELECT c.id AS ID,
+				c.parent_id AS ParentID,
+				c.author_id AS AuthorID,
+				u.username AS AuthorName,
+				c.thread_id AS ThreadID,
+				c.content AS Content,
+				c.created AS Created,
+				c.updated AS Updated,
+				coalesce(SUM(cv.score),0) AS CommentScore
+			FROM comments c
+				JOIN users u ON  c.author_id = u.id
+				LEFT JOIN
+				comment_votes cv ON cv.comment_id = c.id
+			WHERE c.author_id = ? 
+				
+			GROUP BY c.id
+			ORDER BY c.created DESC;`
 	repository.Logger.Debug(query, id)
 	rows, err = repository.DB.Query(query, id)
 	if err == nil {
-		err = MapRowsToSliceOfStruct(rows, comments, true)
+		err = MapRowsToSliceOfStruct(rows, &comments, true)
 		if err == nil {
 			return
 		}

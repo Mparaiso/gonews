@@ -14,10 +14,64 @@ import (
 
 	"bytes"
 	"encoding/json"
-	"html/template"
-
 	"github.com/gorilla/sessions"
+	"html/template"
+	"log"
+	"os"
 )
+
+// LoggerProvider provides a logger to a container
+type LoggerProvider interface {
+	GetLogger() (LoggerInterface, error)
+	MustGetLogger() LoggerInterface
+}
+
+// DefaultLoggerProvider provides logging capabilies to a container
+// it implements LoggerProvider
+type DefaultLoggerProvider struct {
+	loggerFactory func() (LoggerInterface, error)
+	logger        LoggerInterface
+	logLevel      LogLevel
+	debug         bool
+}
+
+// NewDefaultLoggerProvider returns a new DefaultLoggerProvider
+func NewDefaultLoggerProvider(loggerFactory func() (LoggerInterface, error), logLevel LogLevel, debug bool) *DefaultLoggerProvider {
+	return &DefaultLoggerProvider{loggerFactory: loggerFactory, logLevel: logLevel, debug: debug}
+}
+
+// GetLogger gets a logger
+func (provider *DefaultLoggerProvider) GetLogger() (LoggerInterface, error) {
+	if provider.logger == nil {
+		if provider.loggerFactory != nil {
+			logger, err := provider.loggerFactory()
+			if err != nil {
+				return nil, err
+			}
+			provider.logger = logger
+		} else {
+			// adhoc logger creation
+			logger := &log.Logger{}
+			logger.SetOutput(os.Stdout)
+			if provider.debug == true {
+				provider.logger = NewDefaultLogger(ALL)
+			} else {
+				provider.logger = NewDefaultLogger(provider.logLevel)
+			}
+
+		}
+	}
+	return provider.logger, nil
+}
+
+// MustGetLogger panics on error or return a LoggerInterface
+func (provider *DefaultLoggerProvider) MustGetLogger() LoggerInterface {
+	logger, err := provider.GetLogger()
+	if err != nil {
+		panic(err)
+	}
+	return logger
+}
 
 // ResponseWriterExtraProvider provides a ResponseWriterExtra
 type ResponseWriterExtraProvider interface {
@@ -154,11 +208,16 @@ type DefaultTemplateProvider struct {
 	templateDirectory,
 	templateFileExtension string
 	isDebug bool
+	LoggerProvider
 }
 
 // NewDefaultTemplateProvider creates a new DefaultTemplateProvider
-func NewDefaultTemplateProvider(templateDirectory, templateFileExtension string, isDebug bool) *DefaultTemplateProvider {
-	return &DefaultTemplateProvider{templateDirectory: templateDirectory, templateFileExtension: templateFileExtension, isDebug: isDebug}
+func NewDefaultTemplateProvider(templateDirectory, templateFileExtension string, isDebug bool, loggerProvider LoggerProvider) *DefaultTemplateProvider {
+	return &DefaultTemplateProvider{templateDirectory: templateDirectory,
+		templateFileExtension: templateFileExtension,
+		isDebug:               isDebug,
+		LoggerProvider:        loggerProvider,
+	}
 }
 
 // GetTemplate returns *template.Template

@@ -112,7 +112,12 @@ func LoggerMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, nex
 	c.MustGetLogger().Info(
 		fmt.Sprintf("%s %s %s [%s] \"%s %s %s\" %s %d \"%s\" \"%s\"",
 			r.RemoteAddr,
-			"-",
+			func() string {
+				if c.CurrentUser() != nil {
+					return string(c.CurrentUser().ID)
+				}
+				return "-"
+			}(),
 			func() string {
 				if c.CurrentUser() != nil {
 					return c.CurrentUser().Username

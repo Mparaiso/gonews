@@ -51,9 +51,13 @@ func CommentsByAuthorController(c *Container, rw http.ResponseWriter, r *http.Re
 		c.HTTPError(rw, r, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		return
 	}
-	author, err := c.MustGetUserRepository().GetById(id)
+	var (
+		author   *User
+		comments Comments
+	)
+	author, err = c.MustGetUserRepository().GetById(id)
 	if err == nil {
-		comments, err := c.MustGetCommentRepository().GetCommentsByAuthorID(id)
+		comments, err = c.MustGetCommentRepository().GetCommentsByAuthorID(id)
 		if err == nil {
 			err = c.MustGetTemplate().ExecuteTemplate(rw, "comments_list.tpl.html", map[string]interface{}{
 				"Comments": comments,
@@ -315,6 +319,11 @@ func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request,
 			c.HTTPError(rw, r, http.StatusInternalServerError, err)
 		}
 	}
+
+}
+
+// CommentSubmissionController handles comment submission
+func CommentSubmissionController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 
 }
 

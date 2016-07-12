@@ -27,24 +27,25 @@ import (
 
 var DEBUG = false
 
+// Allows arguments to be passed to test
+// ex: go test -args -debug
 func TestMain(m *testing.M) {
-	debug := flag.Bool("debug", false, "debug the test")
+	debug := flag.Bool("debug", false, "debug the test suite")
+
 	flag.Parse()
 	DEBUG = *debug
 	os.Exit(m.Run())
 }
 
-/*
-	Scenario:
-	Given a server
-	When / is requested
-	It should return a valid response
-	The correct number of threads should be displayed
-*/
-func TestAppIndex(t *testing.T) {
+// Scenario: VISITING THE HOMEPAGE
+// Given a server
+// When / is requested
+// It should return a valid response
+// The correct number of threads should be displayed
+func Test_Stories(t *testing.T) {
 	db := GetDB(t)
 	// Given a server
-	server := SetUp(t, db)
+	server := GetServer(t, db)
 	defer server.Close()
 
 	// When the index is requested
@@ -75,19 +76,17 @@ func TestAppIndex(t *testing.T) {
 	}
 }
 
-/*
-	Scenario:
-	Given a server
-	When /from?site=hipsters.acme is requested
-	It should respond with status 200
-	It should display the correct number of threads
-*/
-func TestThreadListBySite(t *testing.T) {
+// Scenario: REQUESTING STORIES BY DOMAIN
+// Given a server
+// When /from?site=hipsters.acme is requested
+// It should respond with status 200
+// It should display the correct number of threads
+func Test_Stories_By_Domain(t *testing.T) {
 	// Given a server
 	var err error
 	site := "hipsters.acme"
 	db := GetDB(t)
-	server := SetUp(t, db)
+	server := GetServer(t, db)
 	defer server.Close()
 	// When /from?site=hipsters.acme is requested
 	http.DefaultClient.Jar, err = cookiejar.New(nil)
@@ -120,21 +119,18 @@ func TestThreadListBySite(t *testing.T) {
 	}
 }
 
-/*
-	Scenario:
-	Given a server
-	When /threads?=id1 is requested
-	It should respond with status 200
-	It should display the correct number of comments belonging to user with id 1
-*/
-func TestThread_id_1(t *testing.T) {
+// Scenario: REQUESTING STORIES BY AUTHOR
+// Given a server
+// When /threads?id=1 is requested
+// It should respond with status 200
+// It should display the correct number of comments belonging to user with id 1
+func Test_Comments_By_User(t *testing.T) {
 	var err error
 	db := GetDB(t)
-
+	defer db.Close()
 	// Given a server
-	server := SetUp(t, db)
+	server := GetServer(t, db)
 	defer server.Close()
-
 	// When /threads?id=1 is requested
 	id := 1
 	res, err := http.Get(server.URL + fmt.Sprintf("/threads?id=%d", id))
@@ -147,7 +143,7 @@ func TestThread_id_1(t *testing.T) {
 		t.Fatalf("status code : want '%v' got '%v' ", want, got)
 	}
 	// It should display the correct number of comments belonging to user with id 1
-	row := db.QueryRow("SELECT COUNT(id) FROM comments WHERE parent_id = ? AND author_id = ? ", 0, id)
+	row := db.QueryRow("SELECT COUNT(c.id) FROM comments c WHERE c.parent_id = ? AND c.author_id = ? LIMIT 1", 0, id)
 	var count int
 	err = row.Scan(&count)
 	if err != nil {
@@ -163,16 +159,14 @@ func TestThread_id_1(t *testing.T) {
 	}
 }
 
-/*
-	Scenario:
-	Given a server
-	When /item?id=1 is requested
-	It should respond with status 200
-	The correct number of comments should be displayed
-*/
-func TestAppThreadShow(t *testing.T) {
+// Scenario:
+// Given a server
+// When /item?id=1 is requested
+// It should respond with status 200
+// The correct number of comments should be displayed
+func Test_Story_By_ID(t *testing.T) {
 	//	Given a server
-	server := SetUp(t)
+	server := GetServer(t)
 	defer server.Close()
 	// When a thread with the id 1 is requested
 	response, err := http.Get(server.URL + "/item?id=1")
@@ -195,15 +189,13 @@ func TestAppThreadShow(t *testing.T) {
 	}
 }
 
-/*
-	Scenario:
-	Given a server
-	When /item?id=3 is requested
-	It should respond with status 200
-	No comment should be displayed on the page
-*/
-func TestAppThreadShow_with_no_comment(t *testing.T) {
-	server := SetUp(t)
+// Scenario:
+// Given a server
+// When /item?id=3 is requested
+// It should respond with status 200
+// No comment should be displayed on the page
+func Test_Story_By_ID_3(t *testing.T) {
+	server := GetServer(t)
 	defer server.Close()
 	response, err := http.Get(server.URL + "/item?id=3")
 	if err != nil {
@@ -221,15 +213,13 @@ func TestAppThreadShow_with_no_comment(t *testing.T) {
 	}
 }
 
-/*
-	Scenario:
-	Given a server
-	When /user?id=1 is requested
-	It should respond with status 200
-	It should display the page for the user with id 1
-*/
+// Scenario:
+// Given a server
+// When /user?id=1 is requested
+// It should respond with status 200
+// It should display the page for the user with id 1
 func TestAppUserShow_1(t *testing.T) {
-	server := SetUp(t)
+	server := GetServer(t)
 	defer server.Close()
 	res, err := http.Get(server.URL + "/user?id=1")
 	if err != nil {
@@ -247,14 +237,12 @@ func TestAppUserShow_1(t *testing.T) {
 	}
 }
 
-/*
-	Given a server
-	When /submitted?id=1 is requested
-	It should respond with status 200
-	It should display the list of stories submitted by that specific user
-*/
+// Given a server
+// When /submitted?id=1 is requested
+// It should respond with status 200
+// It should display the list of stories submitted by that specific user
 func TestAppSubmitted_id_1(t *testing.T) {
-	server := SetUp(t)
+	server := GetServer(t)
 	defer server.Close()
 	resp, err := http.Get(server.URL + "/submitted?id=1")
 	if err != nil {
@@ -274,15 +262,13 @@ func TestAppSubmitted_id_1(t *testing.T) {
 
 }
 
-/*
-	Scenario:
-	Given a server
-	When the login page is requested
-	It should respond with status 200
-	It should display the login form
-*/
+// Scenario:
+// Given a server
+// When the login page is requested
+// It should respond with status 200
+// It should display the login form
 func TestAppLogin_GET(t *testing.T) {
-	server := SetUp(t)
+	server := GetServer(t)
 	defer server.Close()
 	resp, err := http.Get(server.URL + "/login")
 	if err != nil {
@@ -305,15 +291,13 @@ func TestAppLogin_GET(t *testing.T) {
 	}
 }
 
-/*
-	Scenario :
-	Given a server
-	When an unauthorized user attempts to visit a secured page
-	It should respond with 401 error
-*/
+// Scenario :
+// Given a server
+// When an unauthorized user attempts to visit a secured page
+// It should respond with 401 error
 func TestUnAuthorized(t *testing.T) {
 	// Given a server
-	server := SetUp(t)
+	server := GetServer(t)
 	defer server.Close()
 
 	// When an unauthorized user attempts to visit a secured page
@@ -329,15 +313,13 @@ func TestUnAuthorized(t *testing.T) {
 	}
 }
 
-/*
-	Scenario :
-	Given a server
-	When a user requests the login page
-	It should respond with status 200
-	When a user submits the login form with valid data
-	It should login the user into the application
-	It should redirect to the index with status 200
-*/
+// Scenario :
+// Given a server
+// When a user requests the login page
+// It should respond with status 200
+// When a user submits the login form with valid data
+// It should login the user into the application
+// It should redirect to the index with status 200
 func TestAppLogin_POST(t *testing.T) {
 	_, _, _, err := LoginUser(t)
 	if err != nil {
@@ -345,13 +327,11 @@ func TestAppLogin_POST(t *testing.T) {
 	}
 }
 
-/*
-	Scenario:
-	Given a server
-	When an authenicated user sends a post request to the logout page
-	It should log the user out
-	It should redirect to the index
-*/
+// Scenario:
+// Given a server
+// When an authenicated user sends a post request to the logout page
+// It should log the user out
+// It should redirect to the index
 func TestAppLogout(t *testing.T) {
 
 	_, server, _, err := LoginUser(t)
@@ -377,21 +357,18 @@ func TestAppLogout(t *testing.T) {
 	}
 }
 
-/*
-	Scenario:
-	Given a server
-	When a user request the registration page
-	It should respond with status 200
-	When that user submits a registration form with correct values
-	It should persists the new account into the database
-	It should redirect the user to the login page
-	It should create a new user in the database
-
-*/
+// Scenario:
+// Given a server
+// When a user request the registration page
+// It should respond with status 200
+// When that user submits a registration form with correct values
+// It should persists the new account into the database
+// It should redirect the user to the login page
+// It should create a new user in the database
 func TestApp_Registration(t *testing.T) {
 	var err error
 	db := GetDB(t)
-	server := SetUp(t, db)
+	server := GetServer(t, db)
 	defer server.Close()
 	http.DefaultClient.Jar, err = cookiejar.New(nil)
 	if err != nil {
@@ -448,15 +425,13 @@ func TestApp_Registration(t *testing.T) {
 
 }
 
-/*
-	Scenario:
-	Given a server
-	When a non existing page is requested
-	It should respond with status 404
-	The correct error message should be displayed
-*/
+// Scenario: REQUESTING AN NON EXISTING PAGE
+// Given a server
+// When a non existing page is requested
+// It should respond with status 404
+// The correct error message should be displayed
 func TestApp_404(t *testing.T) {
-	server := SetUp(t)
+	server := GetServer(t)
 	defer server.Close()
 	resp, err := http.Get(server.URL + "/non-existant-route")
 	if err != nil {
@@ -479,21 +454,78 @@ func TestApp_404(t *testing.T) {
 	}
 }
 
-/*
-	Scenario:
-	Given a server
+// Scenario: SUBMITTING A COMMENT
+// Given a server
+// When an authenticated client requests /item?id=1
+// It should respond with status 200
+// when an authenicated client submits a valid comment
+// It should respond with status 200
+// The number of comments on the story page should have increased by one
 
-	When an authenticated user requests the submission page
-	It should respond with status 200
-	It should display the story submission form
+func Test_Server_Submitting_a_comment(t *testing.T) {
 
-	When an authenticated user submits a valid story submission
-	It should create a new Thread in the database
-	It should create a thread vote with the id of the thread and the id of the author
-	It should redirect to the story page with the right ID
-	It should respond with status 200
-	It should display the right story
-*/
+	// Given a server
+	_, server, _, err := LoginUser(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// When an authenticated client requests /item?id=1
+	id := 1
+	res, err := http.Get(fmt.Sprintf(server.URL+"/item?id=%d", id))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	// It should respond with status 200
+
+	if want, got := 200, res.StatusCode; want != got {
+		t.Fatalf("status : want '%v' got '%v' ", want, got)
+	}
+	doc, err := goquery.NewDocumentFromResponse(res)
+	csrf, ok := doc.Find("input[name='comment_csrf']").First().Attr("value")
+	if !ok {
+		t.Fatalf("csrf value not found for comment form")
+	}
+	initialCommentNumber := doc.Find(".comment").Length()
+	formValues := url.Values{
+		"comment_content": {"this is a new comment"},
+		"comment_csrf":    {csrf},
+		"comment_submit":  {"submit"},
+		"comment_parent":  {"0"},
+		"comment_goto":    {fmt.Sprintf("/item?id=%d", id)},
+		"comment_thread":  {fmt.Sprintf("%d", id)},
+	}
+	// when an authenicated client submits a valid comment
+	res, err = http.Post(server.URL+"/comment", "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	// It should respond with status 200
+	if want, got := 200, res.StatusCode; want != got {
+		t.Fatalf("Status : want '%v' got '%v' ", want, got)
+	}
+	// The number of comments on the story page should have increased by one
+	doc, err = goquery.NewDocumentFromResponse(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want, got := initialCommentNumber, doc.Find(".comment").Length(); want != got {
+		t.Fatalf(".comment length : want '%v' got '%v' ", want, got)
+	}
+}
+
+// Scenario:
+// Given a server
+// When an authenticated user requests the submission page
+// It should respond with status 200
+// It should display the story submission form
+// When an authenticated user submits a valid story submission
+// It should create a new Thread in the database
+// It should create a thread vote with the id of the thread and the id of the author
+// It should redirect to the story page with the right ID
+// It should respond with status 200
+// It should display the right story
 func TestSubmitStory(t *testing.T) {
 	// Given a server
 	db, server, user, err := LoginUser(t)
@@ -614,8 +646,8 @@ func GetContainerOptions(db *sql.DB) gonews.ContainerOptions {
 	return options
 }
 
-// SetUp sets up the test server with an optional db and returns the test server
-func SetUp(t *testing.T, dbs ...*sql.DB) *httptest.Server {
+// GetServer sets up the test server with an optional db and returns the test server
+func GetServer(t *testing.T, dbs ...*sql.DB) *httptest.Server {
 	// Set Up
 	var db *sql.DB
 	if len(dbs) == 0 {
@@ -636,9 +668,9 @@ func SetUp(t *testing.T, dbs ...*sql.DB) *httptest.Server {
 
 // LoginUserHelper logs a user before executing a test
 func LoginUser(t *testing.T) (*sql.DB, *httptest.Server, *gonews.User, error) {
-	// Setup
+	// GetServer
 	db := GetDB(t)
-	server := SetUp(t, db)
+	server := GetServer(t, db)
 	unencryptedPassword := "password"
 	user := &gonews.User{Username: "mike_doe", Email: "mike_doe@acme.com"}
 	user.CreateSecurePassword(unencryptedPassword)
