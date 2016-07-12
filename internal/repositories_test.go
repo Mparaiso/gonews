@@ -1,7 +1,7 @@
 package gonews_test
 
 import "testing"
-import gonews "github.com/mparaiso/go-news/internal"
+import gonews "github.com/mparaiso/gonews/internal"
 
 func TestThreadRepository_GetByAuthorID(t *testing.T) {
 	db := MigrateUp(GetDB(t), t)

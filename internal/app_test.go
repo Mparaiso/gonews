@@ -17,25 +17,34 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/mparaiso/go-news/internal"
+	"github.com/mparaiso/gonews/internal"
 	"github.com/rubenv/sql-migrate"
 
+	"flag"
 	"net/url"
 	"strings"
 )
 
 var DEBUG = false
 
+func TestMain(m *testing.M) {
+	debug := flag.Bool("debug", false, "debug the test")
+	flag.Parse()
+	DEBUG = *debug
+	os.Exit(m.Run())
+}
+
 /*
 	Scenario:
 	Given a server
-	When the index is requested
+	When / is requested
 	It should return a valid response
 	The correct number of threads should be displayed
 */
 func TestAppIndex(t *testing.T) {
+	db := GetDB(t)
 	// Given a server
-	server := SetUp(t)
+	server := SetUp(t, db)
 	defer server.Close()
 
 	// When the index is requested
@@ -55,15 +64,109 @@ func TestAppIndex(t *testing.T) {
 	selection := doc.Find(".thread")
 
 	// The correct number of threads should be displayed
-	if expected, got := 6, selection.Length(); expected != got {
-		t.Fatalf(".threads length : want '%v' got '%v'", expected, got)
+	row := db.QueryRow("SELECT COUNT(id) FROM threads ;")
+	var threadCount int
+	err = row.Scan(&threadCount)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want, got := threadCount, selection.Length(); want != got {
+		t.Fatalf(".threads length : want '%v' got '%v'", want, got)
 	}
 }
 
 /*
 	Scenario:
 	Given a server
-	When a thread with the id 1 is requested
+	When /from?site=hipsters.acme is requested
+	It should respond with status 200
+	It should display the correct number of threads
+*/
+func TestThreadListBySite(t *testing.T) {
+	// Given a server
+	var err error
+	site := "hipsters.acme"
+	db := GetDB(t)
+	server := SetUp(t, db)
+	defer server.Close()
+	// When /from?site=hipsters.acme is requested
+	http.DefaultClient.Jar, err = cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := http.Get(server.URL + "/from?site=hipsters.acme")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	// It should respond with status 200
+	if want, got := http.StatusOK, res.StatusCode; want != got {
+		t.Fatalf("status code : want '%v' got '%v'", want, got)
+	}
+	row := db.QueryRow("SELECT COUNT(id) FROM threads WHERE url like ?", fmt.Sprintf("%%%s%%", site))
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// It should display the correct number of threads
+	doc, err := goquery.NewDocumentFromResponse(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection := doc.Find(".thread")
+	if want, got := count, selection.Length(); want != got {
+		t.Fatalf(".thread length : want '%v' got '%v'", want, got)
+	}
+}
+
+/*
+	Scenario:
+	Given a server
+	When /threads?=id1 is requested
+	It should respond with status 200
+	It should display the correct number of comments belonging to user with id 1
+*/
+func TestThread_id_1(t *testing.T) {
+	var err error
+	db := GetDB(t)
+
+	// Given a server
+	server := SetUp(t, db)
+	defer server.Close()
+
+	// When /threads?id=1 is requested
+	id := 1
+	res, err := http.Get(server.URL + fmt.Sprintf("/threads?id=%d", id))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	// It should respond with status 200
+	if want, got := 200, res.StatusCode; want != got {
+		t.Fatalf("status code : want '%v' got '%v' ", want, got)
+	}
+	// It should display the correct number of comments belonging to user with id 1
+	row := db.QueryRow("SELECT COUNT(id) FROM comments WHERE parent_id = ? AND author_id = ? ", 0, id)
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := goquery.NewDocumentFromResponse(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection := doc.Find(".comments > .comment")
+	if want, got := count, selection.Length(); want != got {
+		t.Fatalf(".comments > .comment length : want '%v' got '%v' ", want, got)
+	}
+}
+
+/*
+	Scenario:
+	Given a server
+	When /item?id=1 is requested
 	It should respond with status 200
 	The correct number of comments should be displayed
 */
@@ -72,7 +175,7 @@ func TestAppThreadShow(t *testing.T) {
 	server := SetUp(t)
 	defer server.Close()
 	// When a thread with the id 1 is requested
-	response, err := http.Get(server.URL + "/thread?id=1")
+	response, err := http.Get(server.URL + "/item?id=1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,14 +198,14 @@ func TestAppThreadShow(t *testing.T) {
 /*
 	Scenario:
 	Given a server
-	When a thread with no comment is requested
+	When /item?id=3 is requested
 	It should respond with status 200
 	No comment should be displayed on the page
 */
 func TestAppThreadShow_with_no_comment(t *testing.T) {
 	server := SetUp(t)
 	defer server.Close()
-	response, err := http.Get(server.URL + "/thread?id=3")
+	response, err := http.Get(server.URL + "/item?id=3")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +224,7 @@ func TestAppThreadShow_with_no_comment(t *testing.T) {
 /*
 	Scenario:
 	Given a server
-	When a user page with id 1 is requested
+	When /user?id=1 is requested
 	It should respond with status 200
 	It should display the page for the user with id 1
 */
@@ -146,7 +249,7 @@ func TestAppUserShow_1(t *testing.T) {
 
 /*
 	Given a server
-	When the page listing the stories submitted by a specific user is request
+	When /submitted?id=1 is requested
 	It should respond with status 200
 	It should display the list of stories submitted by that specific user
 */
@@ -205,7 +308,7 @@ func TestAppLogin_GET(t *testing.T) {
 /*
 	Scenario :
 	Given a server
-	When a user attempts to visit a secured page
+	When an unauthorized user attempts to visit a secured page
 	It should respond with 401 error
 */
 func TestUnAuthorized(t *testing.T) {
@@ -213,7 +316,7 @@ func TestUnAuthorized(t *testing.T) {
 	server := SetUp(t)
 	defer server.Close()
 
-	// When a user attempts to visit a secured page
+	// When an unauthorized user attempts to visit a secured page
 	resp, err := http.Get(server.URL + "/submit")
 	if err != nil {
 		t.Fatal(err)
@@ -226,7 +329,15 @@ func TestUnAuthorized(t *testing.T) {
 	}
 }
 
-// TestAppLogin_POST logs a registered user into the application
+/*
+	Scenario :
+	Given a server
+	When a user requests the login page
+	It should respond with status 200
+	When a user submits the login form with valid data
+	It should login the user into the application
+	It should redirect to the index with status 200
+*/
 func TestAppLogin_POST(t *testing.T) {
 	_, _, _, err := LoginUser(t)
 	if err != nil {
@@ -364,7 +475,7 @@ func TestApp_404(t *testing.T) {
 	}
 	errorMessage := selection.Find(".error-message").Text()
 	if want, got := http.StatusText(http.StatusNotFound), errorMessage; want != got {
-		t.Fatalf(".error-message text: want '%v' got '%v'")
+		t.Fatalf(".error-message text: want '%v' got '%v'", want, got)
 	}
 }
 
@@ -378,6 +489,7 @@ func TestApp_404(t *testing.T) {
 
 	When an authenticated user submits a valid story submission
 	It should create a new Thread in the database
+	It should create a thread vote with the id of the thread and the id of the author
 	It should redirect to the story page with the right ID
 	It should respond with status 200
 	It should display the right story
@@ -438,9 +550,17 @@ func TestSubmitStory(t *testing.T) {
 	if want, got := values.Get("submission_title"), title; want != got {
 		t.Fatalf("story title : want '%v' got '%v' ", want, got)
 	}
+	// It should create a thread vote with the id of the thread and the id of the author
+	row = db.QueryRow("SELECT tv.id FROM thread_votes tv where tv.author_id = ? and tv.thread_id = ? ", user.ID, id)
+	var threadVoteID int64
+
+	err = row.Scan(&threadVoteID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// It should redirect to the story page with the right ID
-	if want, got := fmt.Sprintf("%s/thread?id=%d", server.URL, id), res.Request.URL.String(); want != got {
+	if want, got := fmt.Sprintf("%s/item?id=%d", server.URL, id), res.Request.URL.String(); want != got {
 		t.Fatalf("redirection path : want '%v' got '%v'", want, got)
 	}
 
@@ -482,7 +602,7 @@ func MigrateUp(db *sql.DB, t *testing.T) *sql.DB {
 	return db
 }
 
-//
+// GetContainerOptions returns container options for tests
 func GetContainerOptions(db *sql.DB) gonews.ContainerOptions {
 	options := gonews.DefaultContainerOptions()
 	options.Debug = DEBUG

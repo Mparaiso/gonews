@@ -9,10 +9,22 @@ import (
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
-	gonews "github.com/mparaiso/go-news/internal"
+	gonews "github.com/mparaiso/gonews/internal"
 )
 
 const version = "0.0.1-alpha"
+
+const documentation = `
+gonews is a port of hacker-news. It is written in Go
+
+Usage:
+go-news <command> [<options>]
+
+Commands: 
+	start 	Starts go-news server
+	version Prints the current version
+	help 	Prints the documentation
+`
 
 func main() {
 
@@ -21,16 +33,17 @@ func main() {
 		Host, Port string
 	}{}
 	startFlagSet := flag.NewFlagSet("start", flag.ExitOnError)
-	startFlagSet.BoolVar(&startOptions.Debug, "debug", false, "Start the application in Debug mode.")
+	startFlagSet.BoolVar(&startOptions.Debug, "debug", false, "Starts the application in Debug mode.")
 	startFlagSet.StringVar(&startOptions.Host, "host", "localhost", "Host address of the server, example : localhost")
 	startFlagSet.StringVar(&startOptions.Port, "port", "8080", "Server port, example: 8080")
+	printDocumentation := func() {
+		print(documentation)
+		print("\nstart command options :\n\n")
+		startFlagSet.PrintDefaults()
+		print("\nexample: gonews start -debug -port 8080 -host localhost\n")
+	}
 	if len(os.Args) == 1 {
-		print("go-news <command> [<options>]\n")
-		print("go-news is a port of hacker-news. It is written in Go\n")
-		print("commands: \n")
-		print("\tstart start go-news server\n")
-		print("\tversion prints the current version\n")
-		print("\thelp prints the documentation\n")
+		printDocumentation()
 		return
 	}
 	switch os.Args[1] {
@@ -54,12 +67,10 @@ func main() {
 	case "version":
 		print(version)
 	case "help":
-		print("Usage : \n\n")
-		print("go-news start [<options>] \n")
-		startFlagSet.PrintDefaults()
-		print("\n\texample: go-news start -debug -port 8080 -host localhost")
+		printDocumentation()
 	default:
 		print("not a valid command : ", os.Args[1])
+		printDocumentation()
 		os.Exit(2)
 	}
 

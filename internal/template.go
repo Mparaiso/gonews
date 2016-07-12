@@ -1,6 +1,7 @@
 package gonews
 
 import (
+	"bytes"
 	"html/template"
 	"io"
 )
@@ -18,14 +19,14 @@ type TemplateEnvironment struct {
 }
 
 // TemplateProvider provides templates
-type TemplateProvider interface {
+type TemplateEngine interface {
 	ExecuteTemplate(io.Writer, string, interface{}) error
 	Environment() Any
 	SetEnvironment(Any)
 }
 
 // Template implement template provider
-type Template struct {
+type DefaultTemplateEngine struct {
 	*template.Template
 	environment Any
 }
@@ -33,19 +34,27 @@ type Template struct {
 // Environment returns the environement used in
 // templates. then Environment is passed to every template
 // being rendered
-func (t *Template) Environment() Any {
+func (t *DefaultTemplateEngine) Environment() Any {
 	return t.environment
 }
 
 // SetEnvironment sets the environment passed to every rendered template
-func (t *Template) SetEnvironment(env Any) {
+func (t *DefaultTemplateEngine) SetEnvironment(env Any) {
 	t.environment = env
 }
 
 // ExecuteTemplate renders a template
-func (t *Template) ExecuteTemplate(writer io.Writer, name string, data interface{}) error {
-	return t.Template.ExecuteTemplate(writer, name, struct {
+func (t *DefaultTemplateEngine) ExecuteTemplate(writer io.Writer, name string, data interface{}) error {
+	// We need to use a temporary buffer.
+	// The reason is that ExecuteTemplate may return an error,
+	// We want to be able to catch it and return status 500 if needed
+	templateBuffer := new(bytes.Buffer)
+	err := t.Template.ExecuteTemplate(templateBuffer, name, struct {
 		Data        Any
 		Environment Any
 	}{data, t.environment})
+	if err == nil {
+		_, err = templateBuffer.WriteTo(writer)
+	}
+	return err
 }

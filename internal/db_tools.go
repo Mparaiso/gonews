@@ -21,6 +21,7 @@ type Scanner interface {
 	Scan(destination ...interface{}) error
 }
 
+// MapRowsToSliceOfSlices maps db rows to a slice of slices
 func MapRowsToSliceOfSlices(scanner RowsScanner, Slices *[][]interface{}) error {
 	defer scanner.Close()
 	for scanner.Next() {

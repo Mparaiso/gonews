@@ -163,19 +163,71 @@ func (t ThreadRepository) log(messages ...interface{}) {
 	}
 }
 
+// Create creates  an thread in the database
 func (t ThreadRepository) Create(thread *Thread) error {
-	query := "INSERT INTO threads(title,url,content,author_id) values(?,?,?,?);"
-	t.Logger.Debug(query, thread)
-	result, err := t.DB.Exec(query, thread.Title, thread.URL, thread.Content, thread.AuthorID)
-	if err != nil {
-		return err
-	}
-	thread.ID, err = result.LastInsertId()
-	if err != nil {
-		return err
+	command := "INSERT INTO threads(title,url,content,author_id) values(?,?,?,?);"
+	t.Logger.Debug(command, thread)
+	result, err := t.DB.Exec(command, thread.Title, thread.URL, thread.Content, thread.AuthorID)
+
+	if err == nil {
+		thread.ID, err = result.LastInsertId()
+		// The following part is handled automatically by the DB with a TRIGGER
+		// so it is commented for now
+		// if err == nil {
+
+		// 	threadVoteRepository := &ThreadVoteRepository{t.DB, t.Logger}
+		// 	_, err = threadVoteRepository.Create(&ThreadVote{AuthorID: thread.AuthorID, ThreadID: thread.ID, Score: 1})
+		// }
 	}
 
-	return nil
+	return err
+}
+
+// GetWhereURLLike returns threads where url like pattern
+func (t ThreadRepository) GetWhereURLLike(pattern string) (threads Threads, err error) {
+	query := `SELECT t.id as ID ,
+       t.title AS Title,
+       t.url AS URL,
+       t.created AS Created,
+       t.updated AS Updated,
+       t.author_id AS AuthorID,
+	   t.username AS AuthorName,
+       COALESCE(SUM(thread_votes.score),0) AS Score,
+       CommentCount
+  	FROM (
+           SELECT threads.id ,
+                  threads.title,
+                  threads.url,
+                  threads.created,
+                  threads.updated,
+                  threads.author_id,
+				  users.username,
+                  COALESCE(COUNT(comments.id), 0) AS CommentCount
+             FROM threads,users
+                  LEFT JOIN
+                  comments ON comments.thread_id = threads.id
+            WHERE threads.url LIKE ? 
+				  AND users.id = threads.author_id
+            GROUP BY threads.id
+            ORDER BY threads.created DESC
+    ) t
+    LEFT JOIN
+    thread_votes ON thread_votes.thread_id = t.id
+ 	GROUP BY t.id;`
+	t.Logger.Debug(query, pattern)
+	var rows *sql.Rows
+	rows, err = t.DB.Query(query, pattern)
+	if err == nil {
+		err = MapRowsToSliceOfStruct(rows, &threads, true)
+		if err == nil {
+			for _, thread := range threads {
+				thread.Author = new(User)
+				thread.Author.Username = thread.AuthorName
+				thread.Author.ID = thread.AuthorID
+			}
+		}
+	}
+	return
 }
 
 // GetByAuthorID returns threads filtered by AuthorID
@@ -352,10 +404,61 @@ func (tr ThreadRepository) GetThreadsOrderedByVoteCount(limit, offset int) (thre
 }
 
 // CommentRepository is a repository of comments
-type CommentRepository struct{}
+type CommentRepository struct {
+	*sql.DB
+	Logger LoggerInterface
+}
+
+// GetCommentsByAuthorID returns comments by author_id
+func (repository *CommentRepository) GetCommentsByAuthorID(id int64) (comments Comments, err error) {
+	var (
+		rows *sql.Rows
+	)
+	query := `SELECT 
+	c.id AS ID,
+	c.parent_id AS ParentID,
+	c.author_id AS AuthorID,
+	u.username AS AuthorName,
+	c.thread_id AS ThreadID,
+	c.content AS Content,
+	c.created AS Created,
+	c.updated AS Updated,
+	SUM(cv.score) AS CommentScore
+	FROM comments c,users u 
+	JOIN comment_votes cv ON cv.comment_id = c.id
+	WHERE c.author_id = ? 
+	GROUP BY c.id
+	ORDER BY c.created DESC
+	;`
+	repository.Logger.Debug(query, id)
+	rows, err = repository.DB.Query(query, id)
+	if err == nil {
+		err = MapRowsToSliceOfStruct(rows, comments, true)
+		if err == nil {
+			return
+		}
+	}
+	return
+}
 
 // CommentVoteRepository is a repository of comment votes
 type CommentVoteRepository struct{}
 
 // ThreadVoteRepository is a repository of thread votes
-type ThreadVoteRepository struct{}
+type ThreadVoteRepository struct {
+	DB     *sql.DB
+	Logger LoggerInterface
+}
+
+// Create creates a new thread vote
+func (repository *ThreadVoteRepository) Create(threadVote *ThreadVote) (i int64, err error) {
+	query := "INSERT INTO thread_votes(thread_id,author_id,score) values(?,?,?)"
+	repository.Logger.Debug(query, threadVote)
+	result, err := repository.DB.Exec(query, threadVote.ThreadID, threadVote.AuthorID, threadVote.Score)
+	if err == nil {
+		if i, err = result.LastInsertId(); err == nil {
+			return i, nil
+		}
+	}
+	return 0, err
+}

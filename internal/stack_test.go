@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/mparaiso/go-news/internal"
+	"github.com/mparaiso/gonews/internal"
 )
 
 // ExampleStack_first demonstrates the use of the middleware stack

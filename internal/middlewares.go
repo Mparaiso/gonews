@@ -58,7 +58,7 @@ func PostOnlyMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 // TemplateMiddleware configure the template engine
 func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	var requestDump string
-	if c.Debug == true {
+	if c.Debug() == true {
 		dump, _ := httputil.DumpRequest(r, true)
 		requestDump = bytes.NewBuffer(dump).String()
 	}

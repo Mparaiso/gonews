@@ -55,11 +55,23 @@ CREATE TABLE thread_votes(
 
 CREATE UNIQUE INDEX thread_votes_index ON thread_votes(thread_id,author_id);
 
+-- +migrate StatementBegin
+
+-- When a new threads record is created, a new thread_votes record is automatically added with the thread.author_id and the thread.id
+-- @see https://www.sqlite.org/lang_createtrigger.html
+
+CREATE TRIGGER thread_inserted AFTER INSERT ON threads
+BEGIN
+    INSERT INTO thread_votes (author_id, thread_id, score )  VALUES ( new.author_id, new.id, 1 );
+END;
+-- +migrate StatementEnd
+
+
 -- +migrate Down
 
 DROP TABLE roles;
 DROP TABLE users_roles;
-DROP INDEX users_roles_index;
+DROP INDEX IF EXISTS users_roles_index;
 DROP TABLE threads;
 DROP TABLE comments;
 DROP TABLE comment_votes;

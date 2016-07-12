@@ -4,6 +4,10 @@
     max-width: 730px;
   }
 }
+/* / */
+ol.threads{
+	padding-left: 15px;
+}
 
 body{
 	font-family: 'Open Sans',Verdana,sans-serif;

@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/mparaiso/go-news/internal"
+	gonews "github.com/mparaiso/gonews/internal"
 )
 
 /*
@@ -25,7 +25,7 @@ func TestSubmissionFormValidator(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	validator := &gonews.SubmissionFormValidator{TestCSRFProvider{}, req}
+	validator := &gonews.SubmissionFormValidator{CSRFGenerator: TestCSRFProvider{}, Request: req}
 	submissionForm := &gonews.SubmissionForm{Name: "Submission form", CSRF: TestCSRFProvider{}.Generate("", ""), Title: "The Title", URL: "foo.bar.com"}
 	// If a valid submission form is validated
 	err = validator.Validate(submissionForm)

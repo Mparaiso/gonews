@@ -1,6 +1,8 @@
 {{ template "header" . }}
 		<!-- thread list -->
-		{{range .Data.Threads -}}
-		<p class="thread">{{ template "thread_partial" . -}}</p>
+		<ol class="threads">
+		{{range $index,$thread := .Data.Threads -}}
+		<li class="thread"><p>{{ template "thread_partial" $thread -}}</p></li>
 		{{- end}}
+		</ol>
 {{ template "footer" . }}

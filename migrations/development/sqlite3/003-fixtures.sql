@@ -2,11 +2,11 @@
 -- password: $2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2
 
 -- users
-INSERT INTO users(id,username,email,password) VALUES(1,"johndoe","john.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
-INSERT INTO users(id,username,email,password) VALUES(2,"janedoe","jane.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
-INSERT INTO users(id,username,email,password) VALUES(3,"jackdoe","jack.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
-INSERT INTO users(id,username,email,password) VALUES(4,"jefinerdoe","jenifer.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
-INSERT INTO users(id,username,email,password) VALUES(5,"helenadoe","helena.doe@acme.com","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(1,"johndoe","john.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(2,"janedoe","jane.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(3,"jackdoe","jack.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(4,"jefinerdoe","jenifer.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(5,"helenadoe","helena.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
 
 -- threads
 INSERT INTO threads(id,title,url,author_id) VALUES(1,"A new computer language","http://computer-language.acme/example.html",1);
@@ -15,13 +15,15 @@ INSERT INTO threads(id,title,url,author_id) VALUES(3,"Furtif, A Scalabe Blockcha
 INSERT INTO threads(id,title,url,author_id) VALUES(4,"Parsing PDF in Joom with Kana","http://blog.kana.acme/tutorials/parsing-pdf-in-joom",4);
 INSERT INTO threads(id,title,url,author_id) VALUES(5,"Querify – An open-source Query Language","http://querify.acme/documentation/#querify",5);
 INSERT INTO threads(id,title,url,author_id) VALUES(6,"JetSet, a professional Javascript and Typescript IDE","http://jetset-ide.acme/presendation.html",1);
-
+INSERT INTO threads(id,title,url,author_id) VALUES(7,"New York: The Silicon Valley of Fooding","https://hipsters.acme/article/3494949",2);
+INSERT INTO threads(id,title,url,author_id) VALUES(8,"Professor Jack Michael: The Secret of Our Success","https://hipsters.acme/article/394491",4);
+INSERT INTO threads(id,title,url,author_id) VALUES(9,"The Difference Between New York, Washington DC, and the Seattle","https://hipsters.acme/article/94844",3);
 
 -- thread_votes
 INSERT INTO thread_votes(thread_id,author_id,score) VALUES(2,3,1);
 INSERT INTO thread_votes(thread_id,author_id,score) VALUES(2,1,1);
 INSERT INTO thread_votes(thread_id,author_id,score) VALUES(2,4,1);
-INSERT INTO thread_votes(thread_id,author_id,score) VALUES(1,1,1);
+INSERT INTO thread_votes(thread_id,author_id,score) VALUES(1,5,1);
 INSERT INTO thread_votes(thread_id,author_id,score) VALUES(1,4,1);
 INSERT INTO thread_votes(thread_id,author_id,score) VALUES(4,2,1);
 

@@ -13,32 +13,32 @@
 			<legend>Login:</legend>
 			<!-- csrf token -->
 			<div class="form-group">
-				<div class="col-sm-offset-1 col-sm-4 {{ and .Data.LoginForm.Errors.CSRF $HAS_ERROR }}" >
+				<div class="col-lg-offset-1 col-lg-4 {{ and .Data.LoginForm.Errors.CSRF $HAS_ERROR }}" >
 					{{ template "list_form_errors" .Data.LoginForm.Errors.CSRF }}
 					<input type="hidden" value="{{- .Data.LoginForm.CSRF -}}" required  name="login_csrf" id="login_csrf" />
 				</div>
 			</div>
 			<!-- username -->
 			<div class="form-group">
-				<label for="username" class="control-label col-sm-1">
+				<label for="username" class="control-label col-lg-2">
 						username: 
 					</label>
-				<div class="col-sm-4 {{ and .Data.LoginForm.Errors.Username $HAS_ERROR }}" >
+				<div class="col-lg-4 {{ and .Data.LoginForm.Errors.Username $HAS_ERROR }}" >
 					{{ template "list_form_errors" .Data.LoginForm.Errors.Username }}
 					<input class="form-control" value="{{.Data.LoginForm.Username}}" required name="login_username" id="login_username" />
 				</div>
 			</div>
 			<div class="form-group">
-				<label for="password" class="control-label col-sm-1">
+				<label for="password" class="control-label col-lg-2">
 						password: 
 					</label>
-				<div class="col-sm-4 {{ and .Data.LoginForm.Errors.Password $HAS_ERROR }}">
+				<div class="col-lg-4 {{ and .Data.LoginForm.Errors.Password $HAS_ERROR }}">
 					{{ template "list_form_errors" .Data.LoginForm.Errors.Password }}
 					<input class="form-control" value="{{.Data.LoginForm.Password}}" type="password" required name="login_password" id="login_password" />
 				</div>
 			</div>
-			<div class="form-group class=" control-label="col-sm-1">
-				<div class="col-sm-offset-1 col-sm-2">
+			<div class="form-group class=" control-label="col-lg-2">
+				<div class="col-lg-offset-2 col-lg-2">
 					<input class="btn btn-default" required type="submit" name="login_submit" id="login_submit" value="Login" />
 				</div>
 			</div>
@@ -51,50 +51,50 @@
 		<fieldset>
 			<legend>Create an Account:</legend>
 			<div class="form-group">
-				<div class="col-sm-offset-1 col-sm-4">
+				<div class="col-lg-offset-2 col-lg-4">
 					{{ template "list_form_errors" .Data.RegistrationForm.Errors.CSRF }}
 				</div>
 			</div>
 			<div class="form-group">
-				<label for="username" class="control-label col-sm-1">
+				<label for="username" class="control-label col-lg-2">
 						username:
 					</label>
-				<div class="col-sm-4">
+				<div class="col-lg-4">
 					{{ template "list_form_errors" .Data.RegistrationForm.Errors.Username }}
 					<input class="form-control" value="{{.Data.RegistrationForm.Username}}" placeholder="your username" required min="6" max="100" name="registration_username" id="registration_username" />
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label col-sm-1" for="email">
+				<label class="control-label col-lg-2" for="email">
 					email: 
 					</label>
-				<div class="col-sm-4">
+				<div class="col-lg-4">
 					{{ template "list_form_errors" .Data.RegistrationForm.Errors.Email }}
 					<input class="form-control" value="{{.Data.RegistrationForm.Email}}" placeholder="you@email.acme" required min="6" max="255" type="email" name="registration_email" id="registration_email"
 					/>
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label col-sm-1" for="password">
+				<label class="control-label col-lg-2" for="password">
 					password: 
 					</label>
-				<div class="col-sm-4">
+				<div class="col-lg-4">
 					{{ template "list_form_errors" .Data.RegistrationForm.Errors.Password }}
 					<input class="form-control" value="{{.Data.RegistrationForm.Password}}" placeholder="your password" required min="6" max="255" type="password" name="registration_password" id="registration_password"
 					/>
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label col-sm-1" for="password">
+				<label class="control-label col-lg-2" for="password">
 					password: 
 					</label>
-				<div class="col-sm-4">
+				<div class="col-lg-4">
 					<input class="form-control" value="{{.Data.RegistrationForm.PasswordConfirmation}}" placeholder="confirm you password" required min="6" max="255" type="password" name="registration_password_confirmation" 
 						id="registration_password_confirmation" />
 				</div>
 			</div>
 			<div class="form-group">
-				<div class="col-sm-offset-1 col-sm-4">
+				<div class="col-lg-offset-2 col-lg-4">
 					<input class="btn btn-default" required type="submit" id="registration_submit" name="registration_submit" value="Create" />
 				</div>
 			</div>

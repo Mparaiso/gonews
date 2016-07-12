@@ -3,6 +3,7 @@
 package gonews
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -28,29 +29,77 @@ func ThreadIndexController(c *Container, rw http.ResponseWriter, r *http.Request
 	c.HTTPError(rw, r, 500, err)
 }
 
+// ThreadByHostController displays a list of threads sharing the same host
+func ThreadByHostController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	host := c.Request().URL.Query().Get("site")
+	threads, err := c.MustGetThreadRepository().GetWhereURLLike("%" + host + "%")
+	if err == nil {
+		err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_list.tpl.html", map[string]interface{}{
+			"Threads": threads,
+			"Title":   "Stories by domain " + host,
+		})
+	}
+	if err != nil {
+		c.HTTPError(rw, r, http.StatusInternalServerError, err)
+	}
+}
+
+// CommentsByAuthorController displays comments by author
+func CommentsByAuthorController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	id, err := strconv.ParseInt(c.Request().URL.Query().Get("id"), 10, 64)
+	if err != nil {
+		c.HTTPError(rw, r, http.StatusNotFound, http.StatusText(http.StatusNotFound))
+		return
+	}
+	author, err := c.MustGetUserRepository().GetById(id)
+	if err == nil {
+		comments, err := c.MustGetCommentRepository().GetCommentsByAuthorID(id)
+		if err == nil {
+			err = c.MustGetTemplate().ExecuteTemplate(rw, "comments_list.tpl.html", map[string]interface{}{
+				"Comments": comments,
+				"Author":   author,
+				"Title":    fmt.Sprintf("%s's comments", author.Username),
+			})
+		}
+	}
+	if err != nil {
+		c.HTTPError(rw, r, http.StatusInternalServerError, err)
+	}
+}
+
 // ThreadListByAuthorIDController displays user's submitted stories
 func ThreadListByAuthorIDController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 32)
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
+		return
 	}
 	userRepository := c.MustGetUserRepository()
 	user, err := userRepository.GetById(id)
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
+		return
 	}
 	if user == nil {
-		c.HTTPError(rw, r, 404, fmt.Sprintf("User with id %d not found", id))
+		c.HTTPError(rw, r, http.StatusNotFound, fmt.Sprintf("User with id %d not found", id))
+		return
 	}
 	threadRepository := c.MustGetThreadRepository()
 	threads, err := threadRepository.GetByAuthorID(user.ID)
-	if err != nil {
-		c.HTTPError(rw, r, 500, err)
+	if err == sql.ErrNoRows {
+		c.HTTPError(rw, r, http.StatusNotFound, err)
+		return
+	} else if err != nil {
+		c.HTTPError(rw, r, http.StatusInternalServerError, err)
+		return
 	}
 	for _, thread := range threads {
 		thread.Author = user
 	}
-	c.MustGetTemplate().ExecuteTemplate(rw, "user_submitted_stories.tpl.html", map[string]interface{}{"Threads": threads, "Author": user})
+	err = c.MustGetTemplate().ExecuteTemplate(rw, "user_submitted_stories.tpl.html", map[string]interface{}{"Threads": threads, "Author": user})
+	if err != nil {
+		c.HTTPError(rw, r, http.StatusInternalServerError, err)
+	}
 }
 
 // ThreadShowController displays a thread and its comments
@@ -106,7 +155,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 			"RegistrationForm": registrationForm,
 		})
 		if err != nil {
-			c.HTTPError(rw, r, 500, err)
+			c.HTTPError(rw, r, http.StatusInternalServerError, err)
 		}
 		return
 	case "POST":
@@ -152,6 +201,9 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 			"RegistrationForm":  registrationForm,
 			"LoginErrorMessage": loginErrorMessage,
 		})
+		if err != nil {
+			c.HTTPError(rw, r, http.StatusInternalServerError, err)
+		}
 		return
 
 	default:
@@ -214,7 +266,7 @@ func UserShowController(c *Container, rw http.ResponseWriter, r *http.Request, n
 	}
 	err = c.MustGetTemplate().ExecuteTemplate(rw, "user_profile.tpl.html", map[string]interface{}{"User": user})
 	if err != nil {
-		c.HTTPError(rw, r, 500, err)
+		c.HTTPError(rw, r, http.StatusInternalServerError, err)
 	}
 }
 
@@ -250,7 +302,7 @@ func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request,
 			err = c.MustGetThreadRepository().Create(thread)
 			if err == nil {
 				c.MustGetSession().AddFlash("Story successfully created!", "success")
-				c.HTTPRedirect(fmt.Sprintf("/thread?id=%d", thread.ID), 302)
+				c.HTTPRedirect(fmt.Sprintf("/item?id=%d", thread.ID), 302)
 				return
 			}
 		}
@@ -260,7 +312,7 @@ func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request,
 			"SubmissionForm": submissionForm,
 		})
 		if err != nil {
-			c.MustGetLogger().Error(err)
+			c.HTTPError(rw, r, http.StatusInternalServerError, err)
 		}
 	}
 
@@ -268,5 +320,5 @@ func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request,
 
 // NotFoundController is a standard 404 page
 func NotFoundController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	c.HTTPError(rw, r, 404, errors.New(http.StatusText(404)))
+	c.HTTPError(rw, r, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }

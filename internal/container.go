@@ -3,11 +3,8 @@
 package gonews
 
 import (
-	"bytes"
 	"database/sql"
-	"encoding/json"
 
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -30,7 +27,8 @@ type ContainerOptions struct {
 	Title,
 	Slogan,
 	Description,
-	TemplateDirectory string
+	TemplateDirectory,
+	TemplateFileExtension string
 	Debug bool
 	LogLevel
 	Session struct {
@@ -45,17 +43,32 @@ type ContainerOptions struct {
 
 // Container contains all the application dependencies
 type Container struct {
-	ContainerOptions
-	db               *sql.DB
-	logger           LoggerInterface
-	threadRepository *ThreadRepository
-	userRepository   *UserRepository
-	template         TemplateProvider
-	SessionProvider
+	ContainerOptions  ContainerOptions
+	db                *sql.DB
+	logger            LoggerInterface
+	threadRepository  *ThreadRepository
+	userRepository    *UserRepository
+	commentRepository *CommentRepository
+
+	template TemplateEngine
+
 	sessionStore sessions.Store
 	request      *http.Request
 	response     ResponseWriterExtra
+
 	CSRFGeneratorProvider
+	TemplateProvider
+	SessionProvider
+
+	user *User
+}
+
+func (c Container) Debug() bool {
+	return c.ContainerOptions.Debug
+}
+
+func (c *Container) SetDebug(debug bool) {
+	c.ContainerOptions.Debug = debug
 }
 
 // Request returns an *http.Request
@@ -73,7 +86,7 @@ func (c *Container) SetResponse(response ResponseWriterExtra) {
 	c.response = response
 }
 
-// Response gets the response writer
+// ResponseWriter returns the response writer
 func (c *Container) ResponseWriter() ResponseWriterExtra {
 	return c.response
 }
@@ -98,40 +111,7 @@ func (c *Container) GetSecret() string {
 	return c.ContainerOptions.Secret
 }
 
-// GetTemplate returns *template.Template
-func (c *Container) GetTemplate() (TemplateProvider, error) {
-	if c.template == nil {
-		tpl, err := template.New("templates").Funcs(template.FuncMap{
-			"IsDebug": func() bool {
-				return c.Debug
-			},
-			"ToJson": func(object Any) (string, error) {
-				b, err := json.MarshalIndent(object, "", "\t")
-				if err != nil {
-					return "", err
-				}
-				return bytes.NewBuffer(b).String(), err
-			},
-		}).ParseGlob(c.ContainerOptions.TemplateDirectory + "/*.tpl.html")
-
-		if err != nil {
-			return nil, err
-		}
-		c.template = &Template{Template: tpl}
-	}
-	return c.template, nil
-}
-
-// MustGetTemplate panics on error
-func (c *Container) MustGetTemplate() TemplateProvider {
-	tpl, err := c.GetTemplate()
-	if err != nil {
-		panic(err)
-	}
-	return tpl
-}
-
-// GetConnection returns *sql.DB
+// GetConnection returns the database connection
 func (c *Container) GetConnection() (*sql.DB, error) {
 	if c.ContainerOptions.ConnectionFactory != nil {
 		db, err := c.ContainerOptions.ConnectionFactory()
@@ -195,6 +175,34 @@ func (c *Container) MustGetUserRepository() *UserRepository {
 	return r
 }
 
+// GetCommentRepository returns the repository of comments
+func (c *Container) GetCommentRepository() (*CommentRepository, error) {
+	var (
+		err    error
+		db     *sql.DB
+		logger LoggerInterface
+	)
+	if c.commentRepository == nil {
+		db, err = c.GetConnection()
+		if err == nil {
+			logger, err = c.GetLogger()
+			if err == nil {
+				c.commentRepository = &CommentRepository{db, logger}
+			}
+		}
+	}
+	return c.commentRepository, err
+}
+
+// MustGetCommentRepository panics on error
+func (c *Container) MustGetCommentRepository() *CommentRepository {
+	if r, err := c.GetCommentRepository(); err != nil {
+		panic(err)
+	} else {
+		return r
+	}
+}
+
 // GetOptions returns the container's options
 func (c *Container) GetOptions() ContainerOptions {
 	return c.ContainerOptions
@@ -247,7 +255,7 @@ func (c *Container) HTTPError(rw http.ResponseWriter, r *http.Request, status in
 	c.MustGetLogger().Error(fmt.Sprintf("%s %d %s", r.URL, status, message))
 	rw.WriteHeader(status)
 	// if debug show a detailed error message
-	if c.Debug == true {
+	if c.ContainerOptions.Debug == true {
 		// if response has been sent, just write to output for now
 		// TODO buffer response in order to handle the case where there is
 		// 		an error in the template which should lead to a status 500

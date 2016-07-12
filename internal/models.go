@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"net/url"
 )
 
 // User is a forum user
@@ -74,10 +75,20 @@ type Thread struct {
 	// CommentCount
 	CommentCount int
 	// Author is the author of the thread
-	Author   *User
-	AuthorID int64
+	Author     *User
+	AuthorID   int64
+	AuthorName string
 	// Comments in the thread
 	Comments Comments
+}
+
+// GetURLHost returns the host of the thread url
+func (t Thread) GetURLHost() (string, error) {
+	u, err := url.Parse(t.URL)
+	if err == nil {
+		return u.Host, err
+	}
+	return "", err
 }
 
 // Comment is a comment in a thread
@@ -140,7 +151,7 @@ type ThreadVote struct {
 	ID       int64
 	ThreadID int64
 	AuthorID int64
-	Value    int
+	Score    int64
 	Created  time.Time
 	Updated  time.Time
 }
