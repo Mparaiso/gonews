@@ -5,9 +5,7 @@ package gonews
 import (
 	"database/sql"
 
-	"log"
 	"net/http"
-	"os"
 
 	"fmt"
 
@@ -59,6 +57,7 @@ type Container struct {
 	CSRFGeneratorProvider
 	TemplateProvider
 	SessionProvider
+	LoggerProvider
 
 	user *User
 }
@@ -206,38 +205,6 @@ func (c *Container) MustGetCommentRepository() *CommentRepository {
 // GetOptions returns the container's options
 func (c *Container) GetOptions() ContainerOptions {
 	return c.ContainerOptions
-}
-
-// GetLogger gets a logger
-func (c *Container) GetLogger() (LoggerInterface, error) {
-	if c.logger == nil {
-		if c.ContainerOptions.LoggerFactory != nil {
-			logger, err := c.ContainerOptions.LoggerFactory()
-			if err != nil {
-				return nil, err
-			}
-			c.logger = logger
-		} else {
-			logger := &log.Logger{}
-			logger.SetOutput(os.Stdout)
-			if c.ContainerOptions.Debug == true {
-				c.logger = NewDefaultLogger(ALL)
-			} else {
-				c.logger = NewDefaultLogger(c.ContainerOptions.LogLevel)
-			}
-
-		}
-	}
-	return c.logger, nil
-}
-
-// MustGetLogger panics on error or return a LoggerInterface
-func (c *Container) MustGetLogger() LoggerInterface {
-	logger, err := c.GetLogger()
-	if err != nil {
-		panic(err)
-	}
-	return logger
 }
 
 // HTTPRedirect redirects a request
