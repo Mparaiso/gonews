@@ -23,21 +23,30 @@ func GetApp(appOptions AppOptions) http.Handler {
 		appOptions.PublicDirectory = path.Join(wd, "public")
 	}
 	// The containerFactory will be used to create a new container
-	// for each request, the container is then passed to all middlewares
+	// for each request, the container is then passed to all middlewares in the middleware stack
 	if appOptions.ContainerFactory == nil {
 		appOptions.ContainerFactory = func() *Container {
 			container := &Container{
 				ContainerOptions: appOptions.ContainerOptions,
 			}
-			container.SessionProvider = NewDefaultSessionProvider(appOptions.ContainerOptions.Session.Name, container, container, container)
+			container.LoggerProvider = NewDefaultLoggerProvider(container.ContainerOptions.LoggerFactory,
+				container.ContainerOptions.LogLevel,
+				container.ContainerOptions.Debug)
+
+			container.SessionProvider = NewDefaultSessionProvider(appOptions.ContainerOptions.Session.Name,
+				container, container, container)
+
 			container.CSRFGeneratorProvider = NewDefaultCSRFGeneratorProvider(container, container)
+
 			container.TemplateProvider = NewDefaultTemplateProvider(container.ContainerOptions.TemplateDirectory,
 				container.ContainerOptions.TemplateFileExtension,
-				container.ContainerOptions.Debug)
+				container.ContainerOptions.Debug, container)
+
 			return container
 		}
 	}
-
+	// This is the default middleware stack each requests pass through all these middlewares
+	// before being handled by a controller (which is also a middleware FYI )
 	DefaultStack := &Stack{
 		Middlewares: []Middleware{
 			StopWatchMiddleware,   // Times how long it takes for the request to be handled
@@ -50,7 +59,6 @@ func GetApp(appOptions AppOptions) http.Handler {
 	Default := DefaultStack.Clone().Build()
 	// Usef for authenticated routes
 	AuthenticatedUsersOnly := DefaultStack.Clone().Push(AuthenticatedUserOnlyMiddleware).Build()
-	// A middleware stack that extends Zero and handles requests for missing pages
 	app := http.NewServeMux()
 	// homepage
 	app.HandleFunc("/", Default(NotFoundMiddleware, ThreadIndexController))
