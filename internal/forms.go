@@ -10,6 +10,44 @@ import (
 
 var decoder = schema.NewDecoder()
 
+// CommentForm is a comment form
+type CommentForm struct {
+	Name     string
+	CSRF     string `schema:"comment_csrf"`
+	Content  string `schema:"comment_content"`
+	Submit   string `schema:"comment_submit"`
+	Goto     string `schema:"comment_goto"`
+	ParentID int64  `schema:"comment_parent_id"`
+	ThreadID int64  `schema:"comment_thread_id"`
+	model    *Comment
+	Errors   map[string][]string
+}
+
+// HandleRequest handle requests
+func (f *CommentForm) HandleRequest(r *http.Request) error {
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(f, r.Form)
+}
+
+// SetModel sets the form model
+func (f *CommentForm) SetModel(model *Comment) {
+	f.model = model
+	f.Content = model.Content
+	f.ParentID = model.ParentID
+	f.ThreadID = model.ThreadID
+}
+
+// Model return the underlying model
+func (f *CommentForm) Model() *Comment {
+	f.model.ParentID = f.ParentID
+	f.model.ThreadID = f.ThreadID
+	f.model.Content = f.Content
+	return f.model
+}
+
 // RegistrationForm is a registration form
 type RegistrationForm struct {
 	Name                 string

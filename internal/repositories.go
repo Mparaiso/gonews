@@ -409,6 +409,22 @@ type CommentRepository struct {
 	Logger LoggerInterface
 }
 
+// Create creates an new comment
+func (repository *CommentRepository) Create(comment *Comment) error {
+	command := `INSERT INTO comments(parent_id,thread_id,author_id,content)
+		VALUES(?,?,?,?);`
+	repository.Logger.Debug(command, comment)
+	result, err := repository.DB.Exec(command,
+		comment.ParentID, comment.ThreadID, comment.AuthorID, comment.Content,
+	)
+	if err == nil {
+		if comment.ID, err = result.LastInsertId(); err == nil {
+			return nil
+		}
+	}
+	return err
+}
+
 // GetCommentsByAuthorID returns comments by author_id
 func (repository *CommentRepository) GetCommentsByAuthorID(id int64) (comments Comments, err error) {
 	var (

@@ -6,10 +6,19 @@
 	<form action="/comment" method="POST" name="comment" class="form-horizontal">
 		<fieldset>
 			<legend><small>Add Comment</small></legend>
-			<!-- csrf -->
 			<div class="form-group">
 				<div class="col-sm-12">
+					{{ with .Data.CommentForm.Errors }}
+						{{ template "list_form_errors" .CSRF }}
+					{{ end }}
+					<!-- goto -->
+					<input type="hidden" name="comment_goto"  value="{{- .Data.CommentForm.Goto -}}">					
+					<!-- csrf -->
 					<input type="hidden" name="comment_csrf"  value="{{- .Data.CommentForm.CSRF -}}">
+					<!-- parent_id -->
+					<input type="hidden" name="comment_parent_id"  value="{{- .Data.CommentForm.ParentID -}}">					
+					<!-- thread_id -->
+					<input type="hidden" name="comment_thread_id"  value="{{- .Data.CommentForm.ThreadID -}}">									
 				</div>
 			</div>
 			<!-- content -->

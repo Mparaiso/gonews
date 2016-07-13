@@ -113,12 +113,8 @@ func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request,
 		c.HTTPError(rw, r, 500, err)
 		return
 	}
-	repository, err := c.GetThreadRepository()
-	if err != nil {
-		c.HTTPError(rw, r, 500, err)
-		return
-	}
-	thread, err := repository.GetThreadByIDWithCommentsAndTheirAuthors(int(id))
+
+	thread, err := c.MustGetThreadRepository().GetThreadByIDWithCommentsAndTheirAuthors(int(id))
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 		return
@@ -127,12 +123,16 @@ func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request,
 		c.HTTPError(rw, r, 404, fmt.Errorf("Thread with ID %d Not Found", id))
 		return
 	}
-	tpl, err := c.GetTemplate()
-	if err != nil {
-		c.HTTPError(rw, r, 500, err)
-		return
+	comment := &Comment{ThreadID: thread.ID, ParentID: 0}
+	if c.HasAuthenticatedUser() {
+		comment.AuthorID = c.CurrentUser().ID
 	}
-	err = tpl.ExecuteTemplate(rw, "thread_show.tpl.html", map[string]interface{}{"Thread": thread})
+	commentForm := &CommentForm{Goto: fmt.Sprintf("/item?id=%d", id)}
+	commentForm.SetModel(comment)
+	err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_show.tpl.html", map[string]interface{}{
+		"Thread":      thread,
+		"CommentForm": commentForm,
+	})
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 		return
@@ -322,9 +322,40 @@ func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request,
 
 }
 
-// CommentSubmissionController handles comment submission
-func CommentSubmissionController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-
+// CommentCreateController handles comment submission
+func CommentCreateController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	switch r.Method {
+	case "POST":
+		form := &CommentForm{CSRF: c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "comment")}
+		form.SetModel(&Comment{AuthorID: c.CurrentUser().ID})
+		err := form.HandleRequest(r)
+		if err != nil {
+			c.HTTPError(rw, r, 500, err)
+			return
+		}
+		formValidator := &CommentFormValidator{c.MustGetCSRFGenerator(), r}
+		err = formValidator.Validate(form)
+		if err == nil {
+			comment := form.Model()
+			err = c.MustGetCommentRepository().Create(comment)
+			if err == nil {
+				c.MustGetSession().AddFlash("Comment sucessfully created.", "success")
+				c.HTTPRedirect(form.Goto, 302)
+				return
+			}
+		}
+		c.ResponseWriter().WriteHeader(http.StatusBadRequest)
+		err = c.MustGetTemplate().ExecuteTemplate(rw, "comment_form.tpl.html", map[string]interface{}{
+			"CommentForm": form,
+			"Title":       "CommentForm",
+			"Error":       "Your form has errors",
+		})
+		if err != nil {
+			c.HTTPError(rw, r, 500, err)
+		}
+	default:
+		c.HTTPError(rw, r, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+	}
 }
 
 // NotFoundController is a standard 404 page

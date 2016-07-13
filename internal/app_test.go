@@ -119,7 +119,7 @@ func Test_Stories_By_Domain(t *testing.T) {
 	}
 }
 
-// Scenario: REQUESTING STORIES BY AUTHOR
+// Scenario: REQUESTING COMMENTS BY AUTHOR
 // Given a server
 // When /threads?id=1 is requested
 // It should respond with status 200
@@ -159,7 +159,7 @@ func Test_Comments_By_User(t *testing.T) {
 	}
 }
 
-// Scenario:
+// Scenario: REQUESING A STORY BY ID
 // Given a server
 // When /item?id=1 is requested
 // It should respond with status 200
@@ -189,7 +189,7 @@ func Test_Story_By_ID(t *testing.T) {
 	}
 }
 
-// Scenario:
+// Scenario: REQUESTING A STORY PAGE BY ID 3
 // Given a server
 // When /item?id=3 is requested
 // It should respond with status 200
@@ -213,7 +213,7 @@ func Test_Story_By_ID_3(t *testing.T) {
 	}
 }
 
-// Scenario:
+// Scenario: REQUESTING A USER PROFILE PAGE BY ID
 // Given a server
 // When /user?id=1 is requested
 // It should respond with status 200
@@ -237,7 +237,7 @@ func TestAppUserShow_1(t *testing.T) {
 	}
 }
 
-// Given a server
+// Given a server REQUESTING STORIES BY AUTHOR
 // When /submitted?id=1 is requested
 // It should respond with status 200
 // It should display the list of stories submitted by that specific user
@@ -262,7 +262,7 @@ func TestAppSubmitted_id_1(t *testing.T) {
 
 }
 
-// Scenario:
+// Scenario: REQUESTING THE LOGIN PAGE
 // Given a server
 // When the login page is requested
 // It should respond with status 200
@@ -291,7 +291,7 @@ func TestAppLogin_GET(t *testing.T) {
 	}
 }
 
-// Scenario :
+// Scenario : REQUESTING AN UNAUTHORIZED PAGE
 // Given a server
 // When an unauthorized user attempts to visit a secured page
 // It should respond with 401 error
@@ -313,7 +313,7 @@ func TestUnAuthorized(t *testing.T) {
 	}
 }
 
-// Scenario :
+// Scenario : SIGNING INTO THE APPLICATION
 // Given a server
 // When a user requests the login page
 // It should respond with status 200
@@ -327,7 +327,7 @@ func TestAppLogin_POST(t *testing.T) {
 	}
 }
 
-// Scenario:
+// Scenario: SIGNING A USER OUT
 // Given a server
 // When an authenicated user sends a post request to the logout page
 // It should log the user out
@@ -357,7 +357,7 @@ func TestAppLogout(t *testing.T) {
 	}
 }
 
-// Scenario:
+// Scenario: REGISTERING A NEW ACCOUNT
 // Given a server
 // When a user request the registration page
 // It should respond with status 200
@@ -488,12 +488,12 @@ func Test_Server_Submitting_a_comment(t *testing.T) {
 	}
 	initialCommentNumber := doc.Find(".comment").Length()
 	formValues := url.Values{
-		"comment_content": {"this is a new comment"},
-		"comment_csrf":    {csrf},
-		"comment_submit":  {"submit"},
-		"comment_parent":  {"0"},
-		"comment_goto":    {fmt.Sprintf("/item?id=%d", id)},
-		"comment_thread":  {fmt.Sprintf("%d", id)},
+		"comment_content":   {"this is a new comment"},
+		"comment_csrf":      {csrf},
+		"comment_submit":    {"submit"},
+		"comment_parent_id": {"0"},
+		"comment_goto":      {fmt.Sprintf("/item?id=%d", id)},
+		"comment_thread_id": {fmt.Sprintf("%d", id)},
 	}
 	// when an authenicated client submits a valid comment
 	res, err = http.Post(server.URL+"/comment", "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
@@ -510,12 +510,12 @@ func Test_Server_Submitting_a_comment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want, got := initialCommentNumber, doc.Find(".comment").Length(); want != got {
+	if want, got := initialCommentNumber+1, doc.Find(".comment").Length(); want != got {
 		t.Fatalf(".comment length : want '%v' got '%v' ", want, got)
 	}
 }
 
-// Scenario:
+// Scenario: SUBMITTING A NEW STORY
 // Given a server
 // When an authenticated user requests the submission page
 // It should respond with status 200

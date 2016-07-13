@@ -62,8 +62,10 @@ func GetApp(appOptions AppOptions) http.Handler {
 	app := http.NewServeMux()
 	// homepage
 	app.HandleFunc("/", Default(NotFoundMiddleware, ThreadIndexController))
-	// thread
+	// thread : a story
 	app.HandleFunc("/item", Default(ThreadShowController))
+	// comment : handles comment submission
+	app.HandleFunc("/comment", Default(PostOnlyMiddleware, CommentCreateController))
 	// thread by host
 	app.HandleFunc("/from", Default(ThreadByHostController))
 	// login

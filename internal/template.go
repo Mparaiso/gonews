@@ -29,7 +29,6 @@ type TemplateEngine interface {
 type DefaultTemplateEngine struct {
 	*template.Template
 	environment Any
-	logger      LoggerInterface
 }
 
 // Environment returns the environement used in
@@ -56,9 +55,6 @@ func (t *DefaultTemplateEngine) ExecuteTemplate(writer io.Writer, name string, d
 	}{data, t.environment})
 	if err == nil {
 		_, err = templateBuffer.WriteTo(writer)
-	}
-	if err != nil {
-		t.logger.Error(err)
 	}
 	return err
 }

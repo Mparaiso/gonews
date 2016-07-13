@@ -53,6 +53,29 @@ func (uv UserValidator) Validate(u *User) ValidationError {
 	return errors
 }
 
+// CommentFormValidator validates a comment form
+type CommentFormValidator struct {
+	CSRFGenerator
+	*http.Request
+}
+
+// Validate validades a comment form
+func (validator *CommentFormValidator) Validate(form *CommentForm) ValidationError {
+	errors := ConcreteValidationError{}
+	StringNotEmptyValidator("Content", form.Content, &errors)
+	StringMinLengthValidator("Content", form.Content, 10, &errors)
+	StringMaxLengthValidator("Content", form.Content, 500, &errors)
+
+	PatternValidator("Goto", form.Goto, regexp.MustCompile(`^\/\S+\?\S+$`), &errors)
+	CSRFValidator("CRSF", form.CSRF, validator.CSRFGenerator, validator.Request.RemoteAddr, "comment", &errors)
+	form.CSRF = validator.CSRFGenerator.Generate(validator.Request.RemoteAddr, "comment")
+	if errors.HasErrors() {
+		form.Errors = errors
+		return errors
+	}
+	return nil
+}
+
 // RegistrationFormValidator is a RegistrationForm validator
 type RegistrationFormValidator struct {
 	request        *http.Request
@@ -205,9 +228,17 @@ func EmailValidator(field, value string, errors ValidationError) {
 	}
 }
 
+// URLValidator validates a URL
 func URLValidator(field, value string, errors ValidationError) {
 	if !IsURL(value) {
 		errors.Append(field, "should be a valid URL")
+	}
+}
+
+// PatternValidator valides a value according to a regexp pattern
+func PatternValidator(field, value string, pattern *regexp.Regexp, errors ValidationError) {
+	if !pattern.MatchString(value) {
+		errors.Append(field, "should match the following pattern : "+pattern.String())
 	}
 }
 
