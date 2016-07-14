@@ -71,6 +71,11 @@ func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 			"notice":  c.MustGetSession().Flashes("notice"),
 		},
 		Request: requestDump,
+		Configuration: struct {
+			CommentMaxDepth int
+		}{
+			CommentMaxDepth: c.GetOptions().Comment.MaxDepth,
+		},
 		Description: struct{ Title, Slogan, Description string }{
 			c.GetOptions().Title,
 			c.GetOptions().Slogan,
@@ -114,7 +119,7 @@ func LoggerMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, nex
 			r.RemoteAddr,
 			func() string {
 				if c.CurrentUser() != nil {
-					return string(c.CurrentUser().ID)
+					return fmt.Sprintf("%d", c.CurrentUser().ID)
 				}
 				return "-"
 			}(),
@@ -128,7 +133,7 @@ func LoggerMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, nex
 			r.Method,
 			r.RequestURI,
 			r.Proto,
-			rw.Header().Get("Status-Code"),
+			c.ResponseWriter().Status(),
 			rw.(ResponseWriterExtra).GetCurrentSize(),
 			r.Referer(),
 			r.UserAgent(),

@@ -10,6 +10,12 @@ import (
 
 var decoder = schema.NewDecoder()
 
+// Form interface is a form
+type Form interface {
+	// HandleRequest deserialize the request body into a form struct
+	HandleRequest(r *http.Request) error
+}
+
 // CommentForm is a comment form
 type CommentForm struct {
 	Name     string

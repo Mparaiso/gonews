@@ -25,12 +25,13 @@ import (
 	"strings"
 )
 
+// DEBUG will allows the test to output additional informations
 var DEBUG = false
 
 // Allows arguments to be passed to test
 // ex: go test -args -debug
 func TestMain(m *testing.M) {
-	debug := flag.Bool("debug", false, "debug the test suite")
+	debug := flag.Bool("debug", DEBUG, "debug the test suite")
 
 	flag.Parse()
 	DEBUG = *debug
@@ -42,7 +43,7 @@ func TestMain(m *testing.M) {
 // When / is requested
 // It should return a valid response
 // The correct number of threads should be displayed
-func Test_Stories(t *testing.T) {
+func Test_Visiting_the_homepage(t *testing.T) {
 	db := GetDB(t)
 	// Given a server
 	server := GetServer(t, db)
@@ -81,7 +82,7 @@ func Test_Stories(t *testing.T) {
 // When /from?site=hipsters.acme is requested
 // It should respond with status 200
 // It should display the correct number of threads
-func Test_Stories_By_Domain(t *testing.T) {
+func Test_Requesting_stories_By_Domain(t *testing.T) {
 	// Given a server
 	var err error
 	site := "hipsters.acme"
@@ -124,7 +125,7 @@ func Test_Stories_By_Domain(t *testing.T) {
 // When /threads?id=1 is requested
 // It should respond with status 200
 // It should display the correct number of comments belonging to user with id 1
-func Test_Comments_By_User(t *testing.T) {
+func Test_Requesting_comments_By_User(t *testing.T) {
 	var err error
 	db := GetDB(t)
 	defer db.Close()
@@ -604,6 +605,101 @@ func TestSubmitStory(t *testing.T) {
 
 	if want, got := title, doc.Find(".thread-title").First().Text(); want != got {
 		t.Fatalf("story title : want '%v' got '%v' ", want, got)
+	}
+}
+
+// Scenario: REPLYING TO COMMENT
+// Given a server
+// When an authenticated user requests the "reply to comment" page /reply?id=XXX&goto=/item?id=XXXX
+// it should respond with status 200
+// When a valid comment form is submitted
+// it should respond with status 200
+// it should redirect to initial requested page
+func Test_Replying_to_Comment(t *testing.T) {
+	// Given a server
+	db, server, user, err := LoginUser(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	print(db, server, user, err)
+	defer server.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	threadID := 1
+	res, err := http.Get(fmt.Sprintf("%s/item?id=%d", server.URL, threadID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if want, got := 200, res.StatusCode; want != got {
+		t.Fatalf("status : want '%v' got '%v' ", want, got)
+	}
+	doc, err := goquery.NewDocumentFromResponse(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	href, ok := doc.Find(".comment-reply").First().Attr("href")
+	if !ok {
+		t.Fatalf("first .comment-reply href not found")
+	}
+	// When an authenticated user requests the "reply to comment" page /reply?id=XXX&goto=/item?id=XXXX
+	res, err = http.Get(server.URL + href)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	// it should respond with status 200
+	if want, got := 200, res.StatusCode; want != got {
+		t.Fatalf("status : want '%v' got '%v' ", want, got)
+	}
+	doc, err = goquery.NewDocumentFromResponse(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	csrf, ok := doc.Find("input[name='comment_csrf']").First().Attr("value")
+	if !ok {
+		t.Fatalf("first input[name='comment_csrf'] value not found")
+	}
+	parentID, ok := doc.Find("input[name='comment_parent_id']").First().Attr("value")
+	if !ok {
+		t.Fatalf("first input[name='comment_parent_id'] value not found")
+	}
+	formThreadID, ok := doc.Find("input[name='comment_thread_id']").First().Attr("value")
+	if !ok {
+		t.Fatalf("first input[name='comment_thread_id'] value not found")
+	}
+	Goto, ok := doc.Find("input[name='comment_goto']").First().Attr("value")
+	if !ok {
+		t.Fatalf("first input[name='comment_goto'] value not found")
+	}
+	formValues := url.Values{
+		"comment_content":   {"this is a response to a comment"},
+		"comment_csrf":      {csrf},
+		"comment_submit":    {"submit"},
+		"comment_parent_id": {parentID},
+		"comment_goto":      {Goto},
+		"comment_thread_id": {formThreadID},
+	}
+	action, ok := doc.Find("form[name='comment']").First().Attr("action")
+	if !ok {
+		t.Fatalf("first form[name='comment'] action attribute not found")
+	}
+	// When a valid comment form is submitted
+	res, err = http.Post(server.URL+action, "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	// it should respond with status 200
+	if want, got := 200, res.StatusCode; want != got {
+		t.Fatalf("status : want '%v' got '%v' ", want, got)
+	}
+
+	// it should redirect to initial requested page
+	if want, got := Goto, res.Request.URL.RequestURI()+"#"+res.Request.URL.Fragment; want != got {
+		t.Fatalf("location : want '%v' got '%v' ", want, got)
 	}
 }
 

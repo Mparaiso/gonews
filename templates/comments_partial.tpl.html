@@ -1,19 +1,13 @@
 	{{define "comments" }}
 		<div class="comments">
 			{{ range . -}}
-			    <div class="comment">
-					<small>
-						<a class="author" href="/user?id={{.AuthorID}}">{{.AuthorName}}</a> 
-						<a href="/item?id={{.ID}}">{{ .Created.Format "Jan 02 2006 15:04:05"}}</a>
-					</small>
-					<div class="content">{{.Content}}</div>
-					<small><a href="/reply?id={{.ID}}&goto={{ printf "%s%d" "/item?id=" .ID}}">reply</a></small>
-					{{ if .HasChildren }}
+				<a name="{{.ID}}">
+				{{ template "comment_partial" . }}
+				{{ if .HasChildren }}
 					<div class="children">
 						{{ template "comments" .Children }}
 					</div>
-				{{ end }}
-				</div>
+    			{{ end }}
 			{{- end }}
 		</div>
 	{{- end }}

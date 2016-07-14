@@ -409,6 +409,40 @@ type CommentRepository struct {
 	Logger LoggerInterface
 }
 
+// GetByID gets a comment by ID
+func (repository *CommentRepository) GetByID(id int64) (comment *Comment, err error) {
+	query := `
+	SELECT  
+		comments.id AS ID,
+		comments.parent_id AS ParentID,
+		comments.thread_id AS ThreadID,
+		comments.author_id AS AuthorID,
+		comments.content AS Content,
+		comments.created AS Created,
+		comments.updated AS Updated,
+		coalesce(SUM(comment_votes.score),0) AS Score,
+		users.username AS AuthorName 
+	FROM 
+		comments, users
+	LEFT JOIN 
+		comment_votes ON comment_votes.comment_id = comments.id
+	WHERE 
+		comments.id == ? 
+		AND comments.author_id = users.id
+	GROUP BY comments.id 
+	LIMIT 1 ;`
+	repository.Logger.Debug(query, id)
+	row := repository.DB.QueryRow(query, id)
+	comment = new(Comment)
+	err = MapRowToStruct([]string{"ID", "ParentID", "ThreadID", "AuthorID", "Content", "Created", "Updated", "Score", "AuthorName"}, row, comment, true)
+	switch err {
+	case sql.ErrNoRows:
+		return nil, nil
+	default:
+		return comment, err
+	}
+}
+
 // Create creates an new comment
 func (repository *CommentRepository) Create(comment *Comment) error {
 	command := `INSERT INTO comments(parent_id,thread_id,author_id,content)

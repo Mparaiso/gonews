@@ -29,7 +29,9 @@ type ContainerOptions struct {
 	TemplateFileExtension string
 	Debug bool
 	LogLevel
-	Session struct {
+	// Maximum Depth of a comment thread
+	CommentMaxDepth int
+	Session         struct {
 		Name         string
 		StoreFactory func() (sessions.Store, error)
 	}
@@ -58,6 +60,7 @@ type Container struct {
 	TemplateProvider
 	SessionProvider
 	LoggerProvider
+	FormDecoderProvider
 
 	user *User
 }

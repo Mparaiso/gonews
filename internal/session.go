@@ -8,6 +8,23 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+// SessionInterface was extracted from Session
+type SessionWrapper interface {
+	AddFlash(value interface{}, vars ...string)
+	Flashes(vars ...string) []interface{}
+	Name() string
+	Save(r *http.Request, w http.ResponseWriter) error
+	Store() sessions.Store
+	Get(interface{}) interface{}
+	Set(interface{}, interface{})
+	Has(interface{}) bool
+	Options() *sessions.Options
+	SetOptions(*sessions.Options)
+	Values() map[interface{}]interface{}
+	ValuesString() map[string]interface{}
+	Delete(interface{})
+}
+
 // Session implementing SessionInterface
 type DefaultSessionWrapper struct {
 	*sessions.Session

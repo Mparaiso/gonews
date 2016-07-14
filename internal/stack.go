@@ -1,6 +1,8 @@
 package gonews
 
 import "net/http"
+import "runtime"
+import "fmt"
 
 // Next is a function that call the next middleware or the handler
 // if all middlewares have been called
@@ -9,11 +11,8 @@ type Next func()
 // ContainerFactory creates a container
 type ContainerFactory func() *Container
 
-// Middleware is a middleware before an handler
+// Middleware is a middleware. It can be transcient or final
 type Middleware func(*Container, http.ResponseWriter, *http.Request, func())
-
-// Handler handles an http request
-type Handler Middleware
 
 // Stack is a stack of handlers
 type Stack struct {
@@ -39,13 +38,18 @@ func (s *Stack) Clone() *Stack {
 }
 
 // Build returns a function that returns a http.HandlerFunc
-func (s *Stack) Build() func(...Handler) http.HandlerFunc {
+func (s *Stack) Build() func(...Middleware) http.HandlerFunc {
+	// copy all the middlewares
+	middlewares := s.Middlewares[:]
+	return func(handlers ...Middleware) http.HandlerFunc {
 
-	return func(handlers ...Handler) http.HandlerFunc {
-		// copy all the middlewares
-		middlewares := s.Middlewares[:]
+		var finalMiddlewareStack []Middleware
+		for _, middleware := range middlewares {
+			finalMiddlewareStack = append(finalMiddlewareStack, middleware)
+		}
+
 		for _, handler := range handlers {
-			middlewares = append(middlewares, Middleware(handler))
+			finalMiddlewareStack = append(finalMiddlewareStack, handler)
 		}
 		return func(rw http.ResponseWriter, r *http.Request) {
 			if s.ContainerFactory == nil {
@@ -57,11 +61,28 @@ func (s *Stack) Build() func(...Handler) http.HandlerFunc {
 			container.SetResponse(rwe)
 			var i int
 			var next func()
-
+			defer func() {
+				// handle potential panic
+				err := recover()
+				if err != nil {
+					message := func() interface{} {
+						if container.Debug() {
+							return err
+						}
+						return http.StatusText(http.StatusInternalServerError)
+					}()
+					container.HTTPError(container.ResponseWriter(), container.Request(), 500, message)
+					container.MustGetLogger().Error("recovered error \t", err)
+					b := make([]byte, 1000)
+					runtime.Stack(b, true)
+					fmt.Printf("%s", b)
+					return
+				}
+			}()
 			next = func() {
-				if len(middlewares) > i {
+				if len(finalMiddlewareStack) > i {
 					i++
-					middlewares[i-1](container, rwe, r, next)
+					finalMiddlewareStack[i-1](container, rwe, r, next)
 
 				}
 			}

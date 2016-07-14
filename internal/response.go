@@ -1,10 +1,22 @@
 package gonews
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 )
+
+// ResponseWriterExtraInterface is a response writer
+// enhanced with various apis
+type ResponseWriterExtra interface {
+	http.ResponseWriter
+	IsResponseWritten() bool
+	SetSession(SessionWrapper)
+	Session() SessionWrapper
+	HasSession() bool
+	GetCurrentSize() int
+	SetLogger(LoggerInterface)
+	Status() int
+}
 
 // ResponseWriterExtra can notify if a response has been written
 type DefaultResponseWriterExtra struct {
@@ -12,8 +24,10 @@ type DefaultResponseWriterExtra struct {
 	Request            *http.Request
 	session            SessionWrapper
 	hasWrittenResponse bool
-	currentSize        int
-	logger             LoggerInterface
+	currentSize,
+	status int
+	logger LoggerInterface
+
 	sync.Once
 }
 
@@ -47,6 +61,7 @@ func (rw *DefaultResponseWriterExtra) error(messages ...interface{}) {
 		rw.logger.Error(append([]interface{}{"ResponseWithExtra.Write"}, messages...)...)
 	}
 }
+
 func (rw *DefaultResponseWriterExtra) debug(messages ...interface{}) {
 	if rw.logger != nil {
 		rw.logger.Debug(append([]interface{}{"ResponseWithExtra.Write"}, messages...)...)
@@ -55,6 +70,7 @@ func (rw *DefaultResponseWriterExtra) debug(messages ...interface{}) {
 
 // Write writes in the response stream
 func (rw *DefaultResponseWriterExtra) Write(b []byte) (size int, err error) {
+	// save the session once
 	rw.Once.Do(func() {
 		if rw.HasSession() {
 			err := rw.Session().Save(rw.Request, rw.ResponseWriter)
@@ -71,6 +87,7 @@ func (rw *DefaultResponseWriterExtra) Write(b []byte) (size int, err error) {
 		rw.error(err)
 	}
 	rw.currentSize += size
+
 	return
 }
 
@@ -86,6 +103,11 @@ func (rw *DefaultResponseWriterExtra) IsResponseWritten() bool {
 
 // WriteHeader writes the status code
 func (rw *DefaultResponseWriterExtra) WriteHeader(status int) {
-	rw.Header().Set("Status-Code", fmt.Sprintf("%d", status))
 	rw.ResponseWriter.WriteHeader(status)
+	rw.status = status
+}
+
+// Status returns the current status
+func (rw *DefaultResponseWriterExtra) Status() int {
+	return rw.status
 }

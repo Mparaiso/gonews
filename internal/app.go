@@ -42,6 +42,8 @@ func GetApp(appOptions AppOptions) http.Handler {
 				container.ContainerOptions.TemplateFileExtension,
 				container.ContainerOptions.Debug, container)
 
+			container.FormDecoderProvider = NewDefaultFormDecoderProvider(new(DefaultFormDecoder))
+
 			return container
 		}
 	}
@@ -65,7 +67,9 @@ func GetApp(appOptions AppOptions) http.Handler {
 	// thread : a story
 	app.HandleFunc("/item", Default(ThreadShowController))
 	// comment : handles comment submission
-	app.HandleFunc("/comment", Default(PostOnlyMiddleware, CommentCreateController))
+	app.HandleFunc("/comment", AuthenticatedUsersOnly(PostOnlyMiddleware, CommentCreateController))
+	// reply : handles replies to comments
+	app.HandleFunc("/reply", AuthenticatedUsersOnly(CommentCreateController))
 	// thread by host
 	app.HandleFunc("/from", Default(ThreadByHostController))
 	// login
@@ -116,6 +120,7 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 			TemplateDirectory:     "templates",
 			TemplateFileExtension: "tpl.html",
 			Secret:                string(secret),
+			CommentMaxDepth:       5,
 			Session: struct {
 				Name         string
 				StoreFactory func() (sessions.Store, error)

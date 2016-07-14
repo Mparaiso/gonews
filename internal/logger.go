@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+// LoggerInterface defines a logger
+type LoggerInterface interface {
+	Debug(messages ...interface{})
+	Info(messages ...interface{})
+	Error(messages ...interface{})
+	ErrorWithStack(messages ...interface{})
+}
+
 const time_format = "2006-01-02 15:04:05"
 
 // LogLevel , @see http://www.tutorialspoint.com/log4j/log4j_logging_levels.htm

@@ -20,6 +20,29 @@ import (
 	"os"
 )
 
+// FormDecoderProvider provides a FormDecoder to a container
+type FormDecoderProvider interface {
+	GetFormDecoder() FormDecoder
+}
+
+// DefaultFormDecoderProvider provides a FormDecoder to a container
+type DefaultFormDecoderProvider struct {
+	FormDecoder
+}
+
+// NewDefaultFormDecoderProvider returns a new DefaultFormDecoderProvider
+func NewDefaultFormDecoderProvider(formDecoder FormDecoder) *DefaultFormDecoderProvider {
+	return &DefaultFormDecoderProvider{formDecoder}
+}
+
+// GetFormDecoder returns a FormDecoder
+func (provider *DefaultFormDecoderProvider) GetFormDecoder() FormDecoder {
+	if provider.FormDecoder == nil {
+		provider.FormDecoder = NewDefaultFormDecoder()
+	}
+	return provider.FormDecoder
+}
+
 // LoggerProvider provides a logger to a container
 type LoggerProvider interface {
 	GetLogger() (LoggerInterface, error)

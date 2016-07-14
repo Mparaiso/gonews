@@ -1,0 +1,6 @@
+{{ block "comment_create" . }}
+    {{ template "header" . }}
+    {{ template "comment_partial" .Data.ParentComment }}
+    {{ template "comment_form" .Data.CommentForm }}
+    {{ template "footer" . }}
+{{ end }}

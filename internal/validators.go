@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+// ValidationError is a validation error
+type ValidationError interface {
+	HasErrors() bool
+	Append(key, value string)
+	Error() string
+}
+
 // ConcreteValidationError holds errors in a map
 type ConcreteValidationError map[string][]string
 

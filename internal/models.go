@@ -3,8 +3,9 @@ package gonews
 import (
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
 	"net/url"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // User is a forum user
@@ -93,16 +94,20 @@ func (t Thread) GetURLHost() (string, error) {
 
 // Comment is a comment in a thread
 type Comment struct {
-	ID           int64
-	ParentID     int64
-	AuthorID     int64
-	AuthorName   string
+	ID       int64
+	ParentID int64
+	AuthorID int64
+
 	ThreadID     int64
 	Content      string
 	CommentScore int
 	Created      time.Time
 	Updated      time.Time
-	Children     Comments
+
+	// virtual fields
+	AuthorName string
+	Depth      int
+	Children   Comments
 }
 
 func (c *Comment) HasChildren() bool {
@@ -129,6 +134,7 @@ func (c Comments) GetTree() (commentTree []*Comment) {
 		}
 		for _, subComment := range c {
 			if subComment.ParentID == id {
+				subComment.Depth += 1
 				comment.Children = append(comment.Children, subComment)
 			}
 		}

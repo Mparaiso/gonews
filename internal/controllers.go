@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"net/http"
 	"strconv"
 )
@@ -325,6 +326,40 @@ func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request,
 // CommentCreateController handles comment submission
 func CommentCreateController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	switch r.Method {
+	case "GET":
+		// reply
+		type Query struct {
+			ID   int64
+			Goto string
+		}
+		q := new(Query)
+		err := decoder.Decode(q, r.URL.Query()) /// TODO find out why the following doesn't work c.GetFormDecoder().Decode(&q, r.URL.Query())
+		if err != nil {
+			c.HTTPError(rw, r, http.StatusBadRequest, err)
+			return
+		}
+		parentComment, err := c.MustGetCommentRepository().GetByID(q.ID)
+		if err != nil {
+			c.HTTPError(rw, r, http.StatusInternalServerError, err)
+			return
+		}
+		if parentComment == nil {
+			c.HTTPError(rw, r, http.StatusNotFound, http.StatusText(http.StatusNotFound))
+			return
+		}
+		comment := &Comment{ThreadID: parentComment.ThreadID, ParentID: parentComment.ID}
+
+		form := &CommentForm{CSRF: c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "comment"), Goto: q.Goto}
+		form.SetModel(comment)
+		err = c.MustGetTemplate().ExecuteTemplate(rw, "comment_create.tpl.html", map[string]interface{}{
+			"ParentComment": parentComment,
+			"CommentForm":   form,
+			"Title":         "Reply",
+		})
+		if err != nil {
+			c.HTTPError(rw, r, http.StatusInternalServerError, err)
+		}
+		return
 	case "POST":
 		form := &CommentForm{CSRF: c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "comment")}
 		form.SetModel(&Comment{AuthorID: c.CurrentUser().ID})
