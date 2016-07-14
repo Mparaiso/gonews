@@ -4,3 +4,4 @@
 temp
 *.exe~
 cover.out
+db.sqlite3
