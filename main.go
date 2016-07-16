@@ -9,7 +9,7 @@ import (
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
-	gonews "github.com/mparaiso/gonews/internal"
+	gonews "github.com/mparaiso/gonews/core"
 )
 
 const version = "0.0.1-alpha"
