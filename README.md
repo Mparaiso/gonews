@@ -9,7 +9,6 @@ license: GNU AGPLv3
 
 Gonews, a hacker news clone written in Go
 
-
 This is a work in progress
 
 Gonews is a hacker news like forum application where users can share links

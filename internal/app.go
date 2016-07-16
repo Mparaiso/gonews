@@ -12,6 +12,14 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+// Route olds routes
+var Route = route{}
+
+type route struct{}
+
+func (route) Newest() string      { return "/newest" }
+func (route) NewComments() string { return "/newcomments" }
+
 // GetApp returns an application ready to be handled by a server
 func GetApp(appOptions AppOptions) http.Handler {
 	// Normalize appOptions
@@ -64,6 +72,10 @@ func GetApp(appOptions AppOptions) http.Handler {
 	app := http.NewServeMux()
 	// homepage
 	app.HandleFunc("/", Default(NotFoundMiddleware, ThreadIndexController))
+	// /newcomment
+	app.HandleFunc(Route.NewComments(), Default(NewCommentsController))
+	// /newest
+	app.HandleFunc(Route.Newest(), Default(NewestStoriesController))
 	// thread : a story
 	app.HandleFunc("/item", Default(ThreadShowController))
 	// comment : handles comment submission
