@@ -28,14 +28,11 @@ import (
 	gonews "github.com/mparaiso/gonews/core"
 )
 
-/*
-	Scenario:
+//	Scenario:
+//	Given a submission form validator
+//	If a valid submission form is validated
+//	It should return no errors
 
-	Given a submission form validator
-
-	If a valid submission form is validated
-	It should return no errors
-*/
 func TestSubmissionFormValidator(t *testing.T) {
 	// Given a submission form validator
 	req, err := http.NewRequest("POST", "http://foo.com/submit", strings.NewReader("request body"))
@@ -43,7 +40,10 @@ func TestSubmissionFormValidator(t *testing.T) {
 		t.Fatal(err)
 	}
 	validator := &gonews.SubmissionFormValidator{CSRFGenerator: TestCSRFProvider{}, Request: req}
-	submissionForm := &gonews.SubmissionForm{Name: "Submission form", CSRF: TestCSRFProvider{}.Generate("", ""), Title: "The Title", URL: "foo.bar.com"}
+	submissionForm := &gonews.SubmissionForm{Name: "Submission form",
+		CSRF:  TestCSRFProvider{}.Generate("", ""),
+		Title: "The Title",
+		URL:   "http://foo.bar.com"}
 	// If a valid submission form is validated
 	err = validator.Validate(submissionForm)
 	// It should return no errors
@@ -54,8 +54,7 @@ func TestSubmissionFormValidator(t *testing.T) {
 
 func ExampleIsURL() {
 	for _, url := range []string{
-		"foo.com",
-		"at.baz.co.uk/foo.com/?&bar=booo",
+		"https://at.baz.co.uk/foo.com/?&bar=booo",
 		"http://baz.com/bar?id=bizz",
 		"http://presentation.opex.com/index.html?foobar=biz#baz",
 	} {
@@ -64,6 +63,8 @@ func ExampleIsURL() {
 	}
 
 	for _, url := range []string{
+		"at.baz.co.uk/foo.com/?&bar=booo",
+		"foo.com",
 		"foo",
 		"biz/baz",
 		"something.com/ with space",
@@ -75,7 +76,8 @@ func ExampleIsURL() {
 	// true
 	// true
 	// true
-	// true
+	// false
+	// false
 	// false
 	// false
 	// false

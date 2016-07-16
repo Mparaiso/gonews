@@ -46,7 +46,7 @@ func ThreadIndexController(c *Container, rw http.ResponseWriter, r *http.Request
 }
 
 // ThreadByHostController displays a list of threads sharing the same host
-func ThreadByHostController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+func StoriesByDomainController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	host := c.Request().URL.Query().Get("site")
 	threads, err := c.MustGetThreadRepository().GetWhereURLLike("%" + host + "%")
 	if err == nil {
@@ -61,7 +61,7 @@ func ThreadByHostController(c *Container, rw http.ResponseWriter, r *http.Reques
 }
 
 // CommentsByAuthorController displays comments by author
-func CommentsByAuthorController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+func AuthorCommentsController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	id, err := strconv.ParseInt(c.Request().URL.Query().Get("id"), 10, 64)
 	if err != nil {
 		c.HTTPError(rw, r, http.StatusNotFound, http.StatusText(http.StatusNotFound))
@@ -88,7 +88,7 @@ func CommentsByAuthorController(c *Container, rw http.ResponseWriter, r *http.Re
 }
 
 // ThreadListByAuthorIDController displays user's submitted stories
-func ThreadListByAuthorIDController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+func AuthorStoriesController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 32)
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
@@ -268,7 +268,7 @@ func RegistrationController(c *Container, rw http.ResponseWriter, r *http.Reques
 }
 
 // UserShowController displays the user's informations
-func UserShowController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+func UserProfileController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 0)
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
@@ -290,7 +290,7 @@ func UserShowController(c *Container, rw http.ResponseWriter, r *http.Request, n
 }
 
 // SubmissionController handles submitted stories
-func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+func SubmitStoryController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	user := c.CurrentUser()
 	if user == nil {
 		c.HTTPRedirect("/login", http.StatusUnauthorized)
@@ -338,7 +338,7 @@ func SubmissionController(c *Container, rw http.ResponseWriter, r *http.Request,
 }
 
 // CommentCreateController handles comment submission
-func CommentCreateController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+func ReplyController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	switch r.Method {
 	case "GET":
 		// reply
@@ -426,7 +426,7 @@ func NewCommentsController(c *Container, rw http.ResponseWriter, r *http.Request
 }
 
 // NewestStoriesController displays new stories
-func NewestStoriesController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+func NewStoriesController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	var (
 		stories Threads
 		err     error

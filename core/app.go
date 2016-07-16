@@ -68,6 +68,7 @@ func GetApp(appOptions AppOptions) http.Handler {
 	Default := DefaultStack.Clone().Build()
 	// Usef for authenticated routes
 	AuthenticatedUsersOnly := DefaultStack.Clone().Push(AuthenticatedUserOnlyMiddleware).Build()
+
 	app := http.NewServeMux()
 	routes := Route{}
 
@@ -76,25 +77,25 @@ func GetApp(appOptions AppOptions) http.Handler {
 
 	app.HandleFunc(routes.NewComments(), Default(NewCommentsController))
 
-	app.HandleFunc(routes.NewStories(), Default(NewestStoriesController))
+	app.HandleFunc(routes.NewStories(), Default(NewStoriesController))
 
 	app.HandleFunc(routes.Thread(), Default(ThreadShowController))
 
-	app.HandleFunc(routes.Reply(), AuthenticatedUsersOnly(CommentCreateController))
+	app.HandleFunc(routes.Reply(), AuthenticatedUsersOnly(ReplyController))
 
-	app.HandleFunc(routes.ThreadsByDomain(), Default(ThreadByHostController))
+	app.HandleFunc(routes.StoriesByDomain(), Default(StoriesByDomainController))
 
 	app.HandleFunc(routes.Login(), Default(LoginController))
 
 	app.HandleFunc(routes.Logout(), Default(PostOnlyMiddleware, LogoutController))
 
-	app.HandleFunc(routes.UserProfile(), Default(UserShowController))
+	app.HandleFunc(routes.UserProfile(), Default(UserProfileController))
 
-	app.HandleFunc(routes.CreateStory(), AuthenticatedUsersOnly(SubmissionController))
+	app.HandleFunc(routes.SubmitStory(), AuthenticatedUsersOnly(SubmitStoryController))
 
-	app.HandleFunc(routes.AuthorStories(), Default(ThreadListByAuthorIDController))
+	app.HandleFunc(routes.AuthorStories(), Default(AuthorStoriesController))
 
-	app.HandleFunc(routes.AuthorComments(), Default(CommentsByAuthorController))
+	app.HandleFunc(routes.AuthorComments(), Default(AuthorCommentsController))
 
 	app.HandleFunc(routes.Registration(), Default(PostOnlyMiddleware, RegistrationController))
 
@@ -187,7 +188,7 @@ func (Route) NewStories() string { return "/newest" }
 func (Route) NewComments() string     { return "/newcomments" }
 func (Route) Thread() string          { return "/item" }
 func (Route) Reply() string           { return "/reply" }
-func (Route) ThreadsByDomain() string { return "/from" }
+func (Route) StoriesByDomain() string { return "/from" }
 func (Route) AuthorComments() string  { return "/threads" }
 func (Route) AuthorStories() string   { return "/submitted" }
 func (Route) Login() string           { return "/login" }
@@ -195,4 +196,4 @@ func (Route) Registration() string    { return "/register" }
 func (Route) Public() string          { return "/public/" }
 func (Route) Logout() string          { return "/logout" }
 func (Route) UserProfile() string     { return "/user" }
-func (Route) CreateStory() string     { return "/submit" }
+func (Route) SubmitStory() string     { return "/submit" }

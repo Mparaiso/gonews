@@ -100,7 +100,7 @@ func Test_Requesting_stories_By_Domain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := http.Get(server.URL + gonews.Route{}.ThreadsByDomain() + "?site=hipsters.acme")
+	res, err := http.Get(server.URL + gonews.Route{}.StoriesByDomain() + "?site=hipsters.acme")
 	if err != nil {
 		t.Fatal(err)
 	}

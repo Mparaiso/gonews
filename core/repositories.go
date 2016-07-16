@@ -385,7 +385,7 @@ func (repository ThreadRepository) GetSortedByScore(limit, offset int) (threads 
 			       coalesce(SUM(thread_votes.score), 0) AS Score
 			FROM threads
 			JOIN
-			    users u
+			    users u ON u.id = threads.author_id
 			LEFT JOIN
 				thread_votes ON thread_votes.thread_id = threads.id
 			 GROUP BY threads.id

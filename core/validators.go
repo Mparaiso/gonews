@@ -255,7 +255,7 @@ func EmailValidator(field, value string, errors ValidationError) {
 // URLValidator validates a URL
 func URLValidator(field, value string, errors ValidationError) {
 	if !IsURL(value) {
-		errors.Append(field, "should be a valid URL")
+		errors.Append(field, "should be a valid URL and begin with http:// or https:// ")
 	}
 }
 
@@ -273,7 +273,7 @@ func CSRFValidator(field string, value string, csrfProvider CSRFGenerator, remot
 	}
 }
 func IsURL(candidate string) bool {
-	return regexp.MustCompile(`^(https?\:\/\/)?(\w+\.)?\w+\.\w+(\.\w+)?\/?\S+$`).MatchString(candidate)
+	return regexp.MustCompile(`^(https?\:\/\/)(\w+\.)?\w+\.\w+(\.\w+)?\/?\S+$`).MatchString(candidate)
 }
 func isEmail(candidate string) bool {
 	return regexp.MustCompile(`\w+@\w+\.\w+`).MatchString(candidate)

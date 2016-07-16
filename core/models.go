@@ -105,6 +105,7 @@ type Thread struct {
 
 // GetURLHost returns the host of the thread url
 func (t Thread) GetURLHost() (string, error) {
+
 	u, err := url.Parse(t.URL)
 	if err == nil {
 		return u.Host, err

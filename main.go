@@ -49,24 +49,7 @@ Commands:
 
 func main() {
 
-	startOptions := struct {
-		Debug, Migrate bool
-		Host, Port,
-		Env, Driver,
-		DataSource, MigrationPath,
-		Secret string
-	}{}
-	// start flags
-	startFlagSet := flag.NewFlagSet("start", flag.ExitOnError)
-	startFlagSet.BoolVar(&startOptions.Debug, "debug", false, "Starts the application in Debug mode.")
-	startFlagSet.StringVar(&startOptions.Host, "host", "0.0.0.0", "Host address of the server, example : localhost")
-	startFlagSet.StringVar(&startOptions.Port, "port", "8080", "Server port, example: 8080")
-	startFlagSet.StringVar(&startOptions.Env, "env", "development", "Current environment, examples: -env=developement , -env=test ")
-	startFlagSet.StringVar(&startOptions.Secret, "secret", defaultSecret, "Secret key used for encryption, example -secret=\"my-secret-key\"")
-	startFlagSet.BoolVar(&startOptions.Migrate, "migrate", false, "migrate will execute an upward database migration when the application starts")
-	startFlagSet.StringVar(&startOptions.MigrationPath, "migrationpath", "migrations", "Sets the migration path from where migrations are executed")
-	startFlagSet.StringVar(&startOptions.Driver, "driver", "sqlite3", "Sets the database driver. Example : -driver=sqlite3")
-	startFlagSet.StringVar(&startOptions.DataSource, "datasource", "db.sqlite3", "Sets the datasource. Example: db.sqlite3")
+	startOptions, startFlagSet := DeclareStartOptions()
 
 	printDocumentation := func() {
 		print(documentation)
@@ -115,7 +98,9 @@ func main() {
 			log.Printf("%d migrations executed", i)
 		}
 		// start server
-		app := gonews.GetApp(gonews.AppOptions{ContainerOptions: options})
+		appOptions := gonews.AppOptions{ContainerOptions: options}
+		appOptions.ContainerOptions.LogLevel = gonews.LogLevel(startOptions.LogLevel)
+		app := gonews.GetApp(appOptions)
 		addr := startOptions.Host + ":" + startOptions.Port
 		fmt.Printf("Server Listening On: %s\n", addr)
 		err := http.ListenAndServe(addr, app)
@@ -133,4 +118,33 @@ func main() {
 		os.Exit(2)
 	}
 
+}
+
+// DeclareStartOptions declare start options to be parsed from command line arguments
+func DeclareStartOptions() (*StartOptions, *flag.FlagSet) {
+	startOptions := &StartOptions{}
+	startFlagSet := flag.NewFlagSet("start", flag.ExitOnError)
+	startFlagSet.BoolVar(&startOptions.Debug, "debug", false, "Starts the application in Debug mode.")
+	startFlagSet.StringVar(&startOptions.Host, "host", "0.0.0.0", "Host address of the server, example : localhost")
+	startFlagSet.StringVar(&startOptions.Port, "port", "8080", "Server port, example: 8080")
+	startFlagSet.StringVar(&startOptions.Env, "env", "development", "Current environment, examples: -env=developement , -env=test ")
+	startFlagSet.StringVar(&startOptions.Secret, "secret", defaultSecret, "Secret key used for encryption, example -secret=\"my-secret-key\"")
+	startFlagSet.BoolVar(&startOptions.Migrate, "migrate", false, "migrate will execute an upward database migration when the application starts")
+	startFlagSet.StringVar(&startOptions.MigrationPath, "migrationpath", "migrations", "Sets the migration path from where migrations are executed")
+	startFlagSet.StringVar(&startOptions.Driver, "driver", "sqlite3", "Sets the database driver. Example : -driver=sqlite3")
+	startFlagSet.StringVar(&startOptions.DataSource, "datasource", "db.sqlite3", "Sets the datasource. Example: -datasource=db.sqlite3")
+	startFlagSet.IntVar(&startOptions.LogLevel, "loglevel", 1, "A value between 0 and 6. Sets the logger verbosity level. Example: -loglevel 0 ")
+
+	return startOptions, startFlagSet
+}
+
+// StartOptions are arguments passed to the commandline
+// when start action is invoked
+type StartOptions struct {
+	Debug, Migrate bool
+	Host, Port,
+	Env, Driver,
+	DataSource, MigrationPath,
+	Secret string
+	LogLevel int
 }

@@ -24,7 +24,8 @@
 			<label class="control-label col-md-1" for="url">Link:</label>
 			<div class="col-md-6">
 				{{ template "list_form_errors" .Data.SubmissionForm.Errors.URL }}
-				<input type="text" class="form-control {{ and .Data.SubmissionForm.Errors.URL $hasError }}" value="{{.Data.SubmissionForm.URL}}" name="submission_url"/>
+				<input type="text" placeholder="https://some-link.acme/some-path" name="submission_url"
+					class="form-control {{ and .Data.SubmissionForm.Errors.URL $hasError }}" value="{{.Data.SubmissionForm.URL}}" />
 				<span class="help-block">Leave url blank to submit a question for discussion. If there is no url, the text (if any) will appear at the top of the thread.</span>
 			</div>
 		</div>
