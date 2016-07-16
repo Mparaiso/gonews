@@ -30,7 +30,7 @@ func RefreshUserMiddleware(c *Container, rw http.ResponseWriter, r *http.Request
 
 	if session.Has("user.ID") {
 		userID := c.MustGetSession().Get("user.ID").(int64)
-		user, err := c.MustGetUserRepository().GetById(userID)
+		user, err := c.MustGetUserRepository().GetByID(userID)
 		if err == nil {
 			if user != nil {
 				c.SetCurrentUser(user)
@@ -74,7 +74,7 @@ func TemplateMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 		Configuration: struct {
 			CommentMaxDepth int
 		}{
-			CommentMaxDepth: c.GetOptions().Comment.MaxDepth,
+			CommentMaxDepth: c.GetOptions().CommentMaxDepth,
 		},
 		Description: struct{ Title, Slogan, Description string }{
 			c.GetOptions().Title,
@@ -115,7 +115,7 @@ func LoggerMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, nex
 	// @see https://en.wikipedia.org/wiki/Common_Log_Format for log format
 	// @see http://httpd.apache.org/docs/1.3/logs.html#combined
 	c.MustGetLogger().Info(
-		fmt.Sprintf("%s %s %s [%s] \"%s %s %s\" %s %d \"%s\" \"%s\"",
+		fmt.Sprintf("%s %s %s [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"",
 			r.RemoteAddr,
 			func() string {
 				if c.CurrentUser() != nil {

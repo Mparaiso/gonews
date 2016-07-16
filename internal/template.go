@@ -14,6 +14,7 @@ type TemplateEnvironment struct {
 	FlashMessages map[string][]interface{}
 	Request       string
 	Description   struct{ Title, Slogan, Description string }
+	Configuration struct{ CommentMaxDepth int }
 	CurrentUser   *User
 	Session       map[string]interface{}
 }

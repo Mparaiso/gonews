@@ -40,7 +40,11 @@ func (s *Stack) Clone() *Stack {
 // Build returns a function that returns a http.HandlerFunc
 func (s *Stack) Build() func(...Middleware) http.HandlerFunc {
 	// copy all the middlewares
-	middlewares := s.Middlewares[:]
+	var middlewares []Middleware
+	for _, middleware := range s.Middlewares {
+		middlewares = append(middlewares, middleware)
+	}
+
 	return func(handlers ...Middleware) http.HandlerFunc {
 
 		var finalMiddlewareStack []Middleware

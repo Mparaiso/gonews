@@ -105,11 +105,13 @@ type Comment struct {
 	Updated      time.Time
 
 	// virtual fields
-	AuthorName string
-	Depth      int
-	Children   Comments
+	AuthorName  string
+	Depth       int
+	Children    Comments
+	ThreadTitle string
 }
 
+// HasChildren return true is the comment has child comments
 func (c *Comment) HasChildren() bool {
 	return len(c.Children) > 0
 }

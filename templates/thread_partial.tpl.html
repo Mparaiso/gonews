@@ -1,10 +1,11 @@
 {{ define "thread_partial" }}
 		{{ $host := .GetURLHost }}
+		<a href="#">&utrif;</a>
 		<a href="{{.URL}}" class="thread-title">{{.Title}}</a> (<a href="/from?site={{$host}}">{{$host}}</a>)
 		<br/>
 			<small>
 			<span class="points">{{.Score}} points</span> by 
-			<span class="username"><a href="/user?id={{.AuthorID}}">{{.Author.Username}}</a></span> 
+			<span class="username"><a href="/user?id={{.AuthorID}}">{{.AuthorName}}</a></span> 
 			<span class="time">{{.Created.Format "Jan 2 15:02:01"}}</span> | 
 			<span class="flag">flag</span> | 
 			<span class="comment-count"><a href="/item?id={{.ID}}"><span class="count">{{- .CommentCount -}}</span> comments</a></span>

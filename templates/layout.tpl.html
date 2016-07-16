@@ -26,7 +26,12 @@
 				<a href="/" class="navbar-brand">{{.Environment.Description.Title}}</a>
 			</div>
 			<div class="navbar-collapse collapse">
+				<!-- nav left -->
 				<ul class="nav navbar-nav navbar-left">
+					<li><a href="/newest">newest</a></li>					
+					<li class="navbar-text">|</li>
+					<li><a href="/newcomments">comments</a></li>
+					<li class="navbar-text">|</li>
 					<li><a href="/submit">submit</a></li>
 					{{ block "submitted" . }}
 					{{ end }}
@@ -34,8 +39,7 @@
 				<ul class="nav navbar-nav navbar-right">
 					{{ with .Environment.CurrentUser }}
 					<li class="current-user"><a href="/user?id={{.ID}}">{{.Username}} ({{.Karma}})</a></li>
-					<li class="navbar-text"> | </a>
-					<li>
+					<li class="navbar-text"> | <li>
 					<form class="navbar-form" action="/logout" method="POST">
 					<input type="submit" value="logout" class="btn btn-link"/>
 					</form>

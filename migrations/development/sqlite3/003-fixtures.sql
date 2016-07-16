@@ -9,7 +9,8 @@ INSERT INTO users(id,username,email,password) VALUES(4,"jefinerdoe","jenifer.doe
 INSERT INTO users(id,username,email,password) VALUES(5,"helenadoe","helena.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
 
 -- threads
-INSERT INTO threads(id,title,url,author_id) VALUES(1,"A new computer language","http://computer-language.acme/example.html",1);
+INSERT INTO threads(id,title,url,author_id,created) VALUES(1,"A new computer language","http://computer-language.acme/example.html",1,datetime('now','+1 day'));
+-- see https://www.sqlite.org/lang_datefunc.html for date functions modifiers 
 INSERT INTO threads(id,title,url,author_id) VALUES(2,"The Acme MVC framework","http://mvc.acme/introduction",2);
 INSERT INTO threads(id,title,url,author_id) VALUES(3,"Furtif, A Scalabe Blockchain Database","http://furtif.acme/blog?id=10",3);
 INSERT INTO threads(id,title,url,author_id) VALUES(4,"Parsing PDF in Joom with Kana","http://blog.kana.acme/tutorials/parsing-pdf-in-joom",4);

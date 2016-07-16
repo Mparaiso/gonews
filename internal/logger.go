@@ -64,7 +64,7 @@ func (l *Logger) Info(messages ...interface{}) {
 // Error logs an error message
 func (l *Logger) Error(messages ...interface{}) {
 	if l.level <= ERROR {
-		l.Logger.Print(append([]interface{}{"\r[ERROR] ", time.Now().Format(time_format), "\n\t"}, messages...)...)
+		l.Logger.Print(append([]interface{}{"\r[ERROR] ", time.Now().Format(time_format), "\t"}, messages...)...)
 	}
 
 }

@@ -1,8 +1,10 @@
 {{ define "comment_partial" }}
-<div class="comment">
+<div class="comment" data-comment-id="{{.ID}}">
     <small>
 	    <a class="author" href="/user?id={{.AuthorID}}">{{.AuthorName}}</a> 
-		<a href="/item?id={{.ID}}">{{ .Created.Format "Jan 02 2006 15:04:05"}}</a>
+		<a href="/item?id={{.ID}}">{{ .Created.Format "Jan 02 2006 15:04:05"}}</a> | 
+        <a href="/item?id={{.ParentID}}#{{.ParentID}}"> parent </a> | 
+        <a href="/item?id={{.ThreadID}}"> {{.ThreadTitle }} </a>
 	</small>
     <div class="content">{{.Content}}</div>
     <small><a class="comment-reply" href="/reply?id={{.ID}}&goto={{ printf "%s%d#%d" "/item?id=" .ThreadID .ID }}">reply</a></small>    

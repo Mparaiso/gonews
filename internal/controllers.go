@@ -56,7 +56,7 @@ func CommentsByAuthorController(c *Container, rw http.ResponseWriter, r *http.Re
 		author   *User
 		comments Comments
 	)
-	author, err = c.MustGetUserRepository().GetById(id)
+	author, err = c.MustGetUserRepository().GetByID(id)
 	if err == nil {
 		comments, err = c.MustGetCommentRepository().GetCommentsByAuthorID(id)
 		if err == nil {
@@ -80,7 +80,7 @@ func ThreadListByAuthorIDController(c *Container, rw http.ResponseWriter, r *htt
 		return
 	}
 	userRepository := c.MustGetUserRepository()
-	user, err := userRepository.GetById(id)
+	user, err := userRepository.GetByID(id)
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 		return
@@ -143,7 +143,6 @@ func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request,
 // LogoutController logs out a user
 func LogoutController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	c.MustGetSession().Delete("user.ID")
-	c.SetCurrentUser(nil)
 	c.HTTPRedirect("/", 302)
 }
 
@@ -260,7 +259,7 @@ func UserShowController(c *Container, rw http.ResponseWriter, r *http.Request, n
 		c.HTTPError(rw, r, 500, err)
 		return
 	}
-	user, err := c.MustGetUserRepository().GetById(id)
+	user, err := c.MustGetUserRepository().GetByID(id)
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 		return
@@ -390,6 +389,42 @@ func CommentCreateController(c *Container, rw http.ResponseWriter, r *http.Reque
 		}
 	default:
 		c.HTTPError(rw, r, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+	}
+}
+
+// NewCommentsController displays new comments
+func NewCommentsController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	var (
+		err      error
+		comments Comments
+	)
+	comments, err = c.MustGetCommentRepository().GetNewestComments()
+	if err == nil {
+		err = c.MustGetTemplate().ExecuteTemplate(rw, "newcomments.tpl.html", map[string]Any{
+			"Title":    "New Comments",
+			"Comments": comments,
+		})
+	}
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+	}
+}
+
+// NewestStoriesController displays new stories
+func NewestStoriesController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	var (
+		stories Threads
+		err     error
+	)
+	stories, err = c.MustGetThreadRepository().GetNewest()
+	if err == nil {
+		err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_list.tpl.html", map[string]interface{}{
+			"Title":   "New Stories",
+			"Threads": stories,
+		})
+	}
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
 	}
 }
 
