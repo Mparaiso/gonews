@@ -1,9 +1,9 @@
-
-
 Gonews
 ======
 
-author: mparaiso <mparais@online.fr>
+[![Build Status](https://travis-ci.org/Mparaiso/gonews.svg?branch=master)](https://travis-ci.org/Mparaiso/gonews)
+
+author: mparaiso <mparaiso@online.fr>
 
 license: GNU AGPLv3
 
