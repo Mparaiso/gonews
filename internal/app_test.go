@@ -5,13 +5,13 @@ package gonews_test
 import (
 	"database/sql"
 	"fmt"
-	"time"
-
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"time"
 
 	"testing"
 
@@ -22,6 +22,7 @@ import (
 
 	"flag"
 	"net/url"
+	"runtime"
 	"strings"
 )
 
@@ -51,30 +52,20 @@ func Test_Visiting_the_homepage(t *testing.T) {
 
 	// When the index is requested
 	response, err := http.Get(server.URL + "/")
+	Expect(t, err, nil)
 
-	if err != nil {
-		t.Fatal(err)
-	}
 	// It should return a valid response
-	if s := response.StatusCode; s != 200 {
-		t.Fatalf("Status code should be 200, got %d", s)
-	}
+	Expect(t, response.StatusCode, 200, "status")
 	doc, err := goquery.NewDocumentFromResponse(response)
-	if err != nil {
-		t.Fatal(err)
-	}
+	Expect(t, err, nil)
 	selection := doc.Find(".thread")
 
 	// The correct number of threads should be displayed
 	row := db.QueryRow("SELECT COUNT(id) FROM threads ;")
 	var threadCount int
 	err = row.Scan(&threadCount)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want, got := threadCount, selection.Length(); want != got {
-		t.Fatalf(".threads length : want '%v' got '%v'", want, got)
-	}
+	Expect(t, err, nil)
+	Expect(t, selection.Length(), threadCount, ".threads length")
 }
 
 // Scenario: REQUESTING STORIES BY DOMAIN
@@ -530,7 +521,7 @@ func Test_Server_Submitting_a_comment(t *testing.T) {
 func TestSubmitStory(t *testing.T) {
 	// Given a server
 	db, server, user, err := LoginUser(t)
-	defer server.Close()
+	defer func() { db.Close(); server.Close() }()
 
 	if err != nil {
 		t.Fatal(err)
@@ -615,9 +606,13 @@ func TestSubmitStory(t *testing.T) {
 // When a valid comment form is submitted
 // it should respond with status 200
 // it should redirect to initial requested page
-func Test_Replying_to_Comment(t *testing.T) {
+func Test_ReplyingToComment(t *testing.T) {
 	// Given a server
 	db, server, user, err := LoginUser(t)
+	defer func() {
+		db.Close()
+		server.Close()
+	}()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -702,6 +697,75 @@ func Test_Replying_to_Comment(t *testing.T) {
 		t.Fatalf("location : want '%v' got '%v' ", want, got)
 	}
 }
+
+// Scenario: REQUESTING NEW COMMENTS PAGE
+// Given a server
+// When the /newcomments url is requested
+// It should respond with status 200
+// It should display the right number of comments
+// It should display the newest comment first
+func TestRequestingNewCommentsPage(t *testing.T) {
+	http.DefaultClient.Jar = nil
+	db := GetDB(t)
+	server := GetServer(t, db)
+	defer func() {
+		db.Close()
+		server.Close()
+	}()
+	// When the /newcomments url is requested
+	res, err := http.Get(server.URL + gonews.Route.NewComments())
+	// It should respond with status 200
+	Expect(t, err, nil, "error")
+	Expect(t, res.StatusCode, 200, "status")
+	// It should display the right number of comments
+	row := db.QueryRow("SELECT COUNT(id) FROM comments ;")
+	var count int
+	Expect(t, row.Scan(&count), nil)
+	doc, err := goquery.NewDocumentFromResponse(res)
+	Expect(t, err, nil)
+	Expect(t, doc.Find(".comment").Length(), count, ".comment count")
+	// It should display the newest comment first
+	row = db.QueryRow("SELECT content FROM comments ORDER BY created DESC lIMIT 1")
+	var content string
+	Expect(t, row.Scan(&content), nil)
+	Expect(t, doc.Find(".comment > .content").First().Text(), content, ".comment > . content text")
+}
+
+// Scenario: DISPLAYING NEWEST STORIES PAGE
+// Given a server
+// When the /newest url is requested
+// It should respond with status 200
+// It should display the newest story first
+func TestDisplayingNewestStoriesPage(t *testing.T) {
+	db := GetDB(t)
+	// Given a server
+	server := GetServer(t, db)
+	defer func() {
+		db.Close()
+		server.Close()
+	}()
+	http.DefaultClient.Jar = nil
+	// When the /newest url is requested
+	res, err := http.Get(server.URL + gonews.Route.Newest())
+	Expect(t, err, nil, "GET /newest")
+	// It should respond with status 200
+
+	Expect(t, res.StatusCode, 200, "status")
+	// It should display the newest story first
+	var id int64
+	row := db.QueryRow("SELECT id FROM threads ORDER BY created DESC LIMIT 1")
+	err = row.Scan(&id)
+	Expect(t, err, nil, "thread id")
+	doc, err := goquery.NewDocumentFromResponse(res)
+	Expect(t, err, nil, "selection")
+	commentID := doc.Find(".thread").First().AttrOr("data-thread-id", "")
+	// It should display the newest story first
+	Expect(t, commentID, fmt.Sprintf("%d", id), ".thread[data-thread-id]")
+}
+
+//
+// HELPERS AND FIXTURES
+//
 
 // Directory is the current directory
 var Directory = func() string {
@@ -835,4 +899,19 @@ func LoginUser(t *testing.T) (*sql.DB, *httptest.Server, *gonews.User, error) {
 		t.Fatalf(".current-user length : expect '%v' got '%v' ", expected, got)
 	}
 	return db, server, user, err
+}
+
+// Expect is a helper used to reduce the boilerplate during test
+func Expect(t *testing.T, got, want interface{}, comments ...string) {
+	var comment string
+	if want != got {
+		if len(comments) > 0 {
+			comment = comments[0]
+
+		} else {
+			comment = "Expect"
+		}
+		_, file, line, _ := runtime.Caller(1)
+		t.Fatalf(fmt.Sprintf("Expect\r%s:%d:\r\t%s : %s", filepath.Base(file), line, comment, "want '%v' got '%v'."), want, got)
+	}
 }
