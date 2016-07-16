@@ -31,7 +31,8 @@ import (
 	sqlmigrate "github.com/rubenv/sql-migrate"
 )
 
-const version = "0.0.1-alpha"
+const version = "0.0.01-alpha"
+
 const defaultSecret = "please change this key in production!"
 
 const documentation = `
