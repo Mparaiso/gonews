@@ -62,20 +62,8 @@ func GetApp(appOptions AppOptions) http.Handler {
 			return container
 		}
 	}
-	// migrations
-	if appOptions.Migrate == true {
 
-	}
-	// This is the default middleware stack each requests pass through all these middlewares
-	// before being handled by a controller (which is also a middleware FYI )
-	DefaultStack := &Stack{
-		Middlewares: []Middleware{
-			StopWatchMiddleware,   // Times how long it takes for the request to be handled
-			LoggerMiddleware,      // Logs each request using the common log format
-			SessionMiddleware,     // Initializes the session
-			RefreshUserMiddleware, // Refresh an authenticated user if user.ID exists in session
-			TemplateMiddleware,    // Configures template environment
-		}, ContainerFactory: appOptions.ContainerFactory}
+	DefaultStack := GetDefaultStack()
 
 	Default := DefaultStack.Clone().Build()
 	// Usef for authenticated routes
@@ -161,6 +149,20 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 		return options
 	}
 }()
+
+// GetDefaultStack returns the default middleware stack
+func GetDefaultStack() *Stack {
+	// This is the default middleware stack each requests pass through all these middlewares
+	// before being handled by a controller (which is also a middleware FYI )
+	return &Stack{
+		Middlewares: []Middleware{
+			StopWatchMiddleware,   // Times how long it takes for the request to be handled
+			LoggerMiddleware,      // Logs each request using the common log format
+			SessionMiddleware,     // Initializes the session
+			RefreshUserMiddleware, // Refresh an authenticated user if user.ID exists in session
+			TemplateMiddleware,    // Configures template environment
+		}, ContainerFactory: appOptions.ContainerFactory}
+}
 
 // AppOptions gather all the configuration options
 type AppOptions struct {

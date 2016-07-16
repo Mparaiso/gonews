@@ -1,0 +1,15 @@
+package: github.com/mparaiso/gonews
+import:
+- package: github.com/gorilla/Schema
+- package: github.com/gorilla/context
+  version: ^1.1.0
+- package: github.com/gorilla/sessions
+- package: github.com/mattn/go-sqlite3
+  version: ^1.1.0
+- package: github.com/rubenv/sql-migrate
+- package: golang.org/x/crypto
+  subpackages:
+  - bcrypt
+- package: golang.org/x/net
+  subpackages:
+  - xsrftoken
