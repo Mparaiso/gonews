@@ -65,6 +65,7 @@ type Role struct {
 
 // Thread is a forum thread
 type Thread struct {
+	// db columns
 	ID       int64
 	Title    string
 	URL      string

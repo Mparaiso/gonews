@@ -51,7 +51,7 @@ func Test_Visiting_the_homepage(t *testing.T) {
 	defer server.Close()
 
 	// When the index is requested
-	response, err := http.Get(server.URL + "/")
+	response, err := http.Get(server.URL + gonews.Route{}.StoriesByScore())
 	Expect(t, err, nil)
 
 	// It should return a valid response
@@ -488,7 +488,7 @@ func Test_Server_Submitting_a_comment(t *testing.T) {
 		"comment_thread_id": {fmt.Sprintf("%d", id)},
 	}
 	// when an authenicated client submits a valid comment
-	res, err = http.Post(server.URL+"/comment", "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
+	res, err = http.Post(server.URL+gonews.Route{}.Reply(), "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -713,7 +713,7 @@ func TestRequestingNewCommentsPage(t *testing.T) {
 		server.Close()
 	}()
 	// When the /newcomments url is requested
-	res, err := http.Get(server.URL + gonews.Route.NewComments())
+	res, err := http.Get(server.URL + gonews.Route{}.NewComments())
 	// It should respond with status 200
 	Expect(t, err, nil, "error")
 	Expect(t, res.StatusCode, 200, "status")
@@ -746,7 +746,7 @@ func TestDisplayingNewestStoriesPage(t *testing.T) {
 	}()
 	http.DefaultClient.Jar = nil
 	// When the /newest url is requested
-	res, err := http.Get(server.URL + gonews.Route.Newest())
+	res, err := http.Get(server.URL + gonews.Route{}.NewStories())
 	Expect(t, err, nil, "GET /newest")
 	// It should respond with status 200
 

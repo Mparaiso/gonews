@@ -13,12 +13,23 @@ import (
 )
 
 // Route olds routes
-var Route = route{}
 
-type route struct{}
+type Route struct{}
 
-func (route) Newest() string      { return "/newest" }
-func (route) NewComments() string { return "/newcomments" }
+func (Route) StoriesByScore() string  { return "/" }
+func (Route) NewStories() string      { return "/newest" }
+func (Route) NewComments() string     { return "/newcomments" }
+func (Route) Thread() string          { return "/item" }
+func (Route) Reply() string           { return "/reply" }
+func (Route) ThreadsByDomain() string { return "/from" }
+func (Route) AuthorComments() string  { return "/threads" }
+func (Route) AuthorStories() string   { return "/submitted" }
+func (Route) Login() string           { return "/login" }
+func (Route) Registration() string    { return "/register" }
+func (Route) Public() string          { return "/public" }
+func (Route) Logout() string          { return "/logout" }
+func (Route) UserProfile() string     { return "/user" }
+func (Route) CreateStory() string     { return "/submit" }
 
 // GetApp returns an application ready to be handled by a server
 func GetApp(appOptions AppOptions) http.Handler {
@@ -31,7 +42,7 @@ func GetApp(appOptions AppOptions) http.Handler {
 		appOptions.PublicDirectory = path.Join(wd, "public")
 	}
 	// The containerFactory will be used to create a new container
-	// for each request, the container is then passed to all middlewares in the middleware stack
+	// for each request, the container is then passed to all middlewares in the stack
 	if appOptions.ContainerFactory == nil {
 		appOptions.ContainerFactory = func() *Container {
 			container := &Container{
@@ -70,37 +81,37 @@ func GetApp(appOptions AppOptions) http.Handler {
 	// Usef for authenticated routes
 	AuthenticatedUsersOnly := DefaultStack.Clone().Push(AuthenticatedUserOnlyMiddleware).Build()
 	app := http.NewServeMux()
-	// homepage
-	app.HandleFunc("/", Default(NotFoundMiddleware, ThreadIndexController))
-	// /newcomment
-	app.HandleFunc(Route.NewComments(), Default(NewCommentsController))
-	// /newest
-	app.HandleFunc(Route.Newest(), Default(NewestStoriesController))
-	// thread : a story
-	app.HandleFunc("/item", Default(ThreadShowController))
-	// comment : handles comment submission
-	app.HandleFunc("/comment", AuthenticatedUsersOnly(PostOnlyMiddleware, CommentCreateController))
-	// reply : handles replies to comments
-	app.HandleFunc("/reply", AuthenticatedUsersOnly(CommentCreateController))
-	// thread by host
-	app.HandleFunc("/from", Default(ThreadByHostController))
-	// login
-	app.HandleFunc("/login", Default(LoginController))
-	// logout
-	app.HandleFunc("/logout", Default(PostOnlyMiddleware, LogoutController))
-	// user
-	app.HandleFunc("/user", Default(UserShowController))
-	// submit
-	app.HandleFunc("/submit", AuthenticatedUsersOnly(SubmissionController))
-	// submitted
-	app.HandleFunc("/submitted", Default(ThreadListByAuthorIDController))
-	// threads : author's comments
-	app.HandleFunc("/threads", Default(CommentsByAuthorController))
-	// registration
-	app.HandleFunc("/register", Default(PostOnlyMiddleware, RegistrationController))
-	//public static files
-	app.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir(appOptions.PublicDirectory))))
-	// not found
+	routes := Route{}
+
+	// index
+	app.HandleFunc(routes.StoriesByScore(), Default(NotFoundMiddleware, ThreadIndexController))
+
+	app.HandleFunc(routes.NewComments(), Default(NewCommentsController))
+
+	app.HandleFunc(routes.NewStories(), Default(NewestStoriesController))
+
+	app.HandleFunc(routes.Thread(), Default(ThreadShowController))
+
+	app.HandleFunc(routes.Reply(), AuthenticatedUsersOnly(CommentCreateController))
+
+	app.HandleFunc(routes.ThreadsByDomain(), Default(ThreadByHostController))
+
+	app.HandleFunc(routes.Login(), Default(LoginController))
+
+	app.HandleFunc(routes.Logout(), Default(PostOnlyMiddleware, LogoutController))
+
+	app.HandleFunc(routes.UserProfile(), Default(UserShowController))
+
+	app.HandleFunc(routes.CreateStory(), AuthenticatedUsersOnly(SubmissionController))
+
+	app.HandleFunc(routes.AuthorStories(), Default(ThreadListByAuthorIDController))
+
+	app.HandleFunc(routes.AuthorComments(), Default(CommentsByAuthorController))
+
+	app.HandleFunc(routes.Registration(), Default(PostOnlyMiddleware, RegistrationController))
+
+	app.Handle(routes.Public(), http.StripPrefix(routes.Public(), http.FileServer(http.Dir(appOptions.PublicDirectory))))
+
 	return app
 }
 
