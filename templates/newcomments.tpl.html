@@ -1,0 +1,7 @@
+{{ template "header" . }}
+<div class="comments">
+    {{ range .Data.Comments}}
+        {{ template "comment_partial" . }}
+    {{ end }}
+</div>
+{{ template "footer" . }}
