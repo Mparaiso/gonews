@@ -1,0 +1,25 @@
+{
+	"ImportPath": "github.com/mparaiso/gonews",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
+	"Deps": [
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Comment": "v1.1.0-69-g38ee283",
+			"Rev": "38ee283dabf11c9cbdb968eebd79b1fa7acbabe6"
+		},
+		{
+			"ImportPath": "github.com/rubenv/sql-migrate",
+			"Rev": "969836b11ea791ff8335d8142eb96904db12d593"
+		},
+		{
+			"ImportPath": "github.com/rubenv/sql-migrate/sqlparse",
+			"Rev": "969836b11ea791ff8335d8142eb96904db12d593"
+		},
+		{
+			"ImportPath": "gopkg.in/gorp.v1",
+			"Comment": "v1.7.1",
+			"Rev": "c87af80f3cc5036b55b83d77171e156791085e2e"
+		}
+	]
+}
