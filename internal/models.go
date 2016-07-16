@@ -65,22 +65,24 @@ type Role struct {
 
 // Thread is a forum thread
 type Thread struct {
-	ID      int64
-	Title   string
-	URL     string
-	Content string
-	Created time.Time
-	Updated time.Time
-	// Score is a virtual column, counts all the votes for a thread
-	Score int
-	// CommentCount
-	CommentCount int
+	ID       int64
+	Title    string
+	URL      string
+	Content  string
+	Created  time.Time
+	Updated  time.Time
+	AuthorID int64
+
 	// Author is the author of the thread
-	Author     *User
-	AuthorID   int64
-	AuthorName string
+	Author *User
+
 	// Comments in the thread
 	Comments Comments
+
+	// virtual fields
+	AuthorName   string
+	CommentCount int
+	Score        int
 }
 
 // GetURLHost returns the host of the thread url

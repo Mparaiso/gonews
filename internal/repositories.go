@@ -6,7 +6,6 @@ package gonews
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 )
 
 // Query is an SQL Query
@@ -350,66 +349,42 @@ func (repository ThreadRepository) GetThreadByIDWithCommentsAndTheirAuthors(id i
 
 // GetThreadsOrderedByVoteCount returns threads ordered by thread vote count
 func (repository ThreadRepository) GetThreadsOrderedByVoteCount(limit, offset int) (threads Threads, err error) {
-	query := `SELECT threads.id AS ID,threads.author_id AS AuthorID,threads.title AS Title,
-	threads.created AS Created, threads.url as URL ,
-	COUNT(thread_votes.id) AS Score FROM threads LEFT JOIN
-	thread_votes ON thread_votes.thread_id = threads.id
-	GROUP BY threads.id
-	ORDER BY score DESC ,threads.created DESC
-	LIMIT ? OFFSET ?;`
+	query := `
+		SELECT t.ID,
+		       t.AuthorID,
+		       t.Title,
+		       t.Created,
+		       t.URL,
+		       t.Score,
+		       t.AuthorName,
+		       coalesce(COUNT(c.id), 0) AS CommentCount
+		FROM (
+			SELECT threads.id AS ID,
+			       threads.author_id AS AuthorID,
+			       threads.title AS Title,
+			       threads.created AS Created,
+			       threads.url AS URL,
+			       u.username AS AuthorName,
+			       coalesce(SUM(thread_votes.score), 0) AS Score
+			FROM threads
+			JOIN
+			    users u
+			LEFT JOIN
+				thread_votes ON thread_votes.thread_id = threads.id
+			 GROUP BY threads.id
+       	) t
+       	LEFT JOIN
+       		comments c ON c.thread_id = t.ID
+       	GROUP BY t.ID
+ 		ORDER BY t.Score DESC, t.Created DESC
+		LIMIT ? OFFSET ? ;`
+	var (
+		rows *sql.Rows
+	)
 	defer repository.Logger.Debug(query, limit, offset)
-	rows, err := repository.DB.Query(query, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	err = MapRowsToSliceOfStruct(rows, &threads, true)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := threads.GetAuthorIDsInterface()
-	inClause := strings.TrimRight(strings.Repeat("?,", len(ids)), ",")
-	queryCommentCount := fmt.Sprintf(`SELECT threads.id as ID,
-	COUNT(comments.id) as CommentCount 
-	FROM threads LEFT JOIN comments ON comments.thread_id = threads.id 
-	WHERE threads.id IN(%s) 
-	GROUP BY threads.id;`, inClause)
-	defer repository.Logger.Debug(queryCommentCount, ids)
-	rows, err = repository.DB.Query(queryCommentCount, ids...)
-	type CommentCount struct {
-		ID           int64
-		CommentCount int
-	}
-	sliceOfcommentCount := []*CommentCount{}
-	err = MapRowsToSliceOfStruct(rows, &sliceOfcommentCount, true)
-	if err != nil {
-		return nil, err
-	}
-	commentCountMap := map[int64]int{}
-	for _, commentCount := range sliceOfcommentCount {
-		commentCountMap[commentCount.ID] = commentCount.CommentCount
-	}
-	for _, thread := range threads {
-		thread.CommentCount = commentCountMap[thread.ID]
-	}
-	query2 := fmt.Sprintf("SELECT username as Username, id as ID FROM users WHERE id IN(%s)", inClause)
-	defer repository.Logger.Debug(query2, ids)
-
-	rows, err = repository.DB.Query(query2, ids...)
-	if err != nil {
-		return nil, err
-	}
-	var users []*User
-	err = MapRowsToSliceOfStruct(rows, &users, true)
-	if err != nil {
-		return nil, err
-	}
-	var userMap = map[int64]*User{}
-	for _, user := range users {
-		userMap[user.ID] = user
-	}
-	for _, thread := range threads {
-		thread.Author = userMap[thread.AuthorID]
+	rows, err = repository.DB.Query(query, limit, offset)
+	if err == nil {
+		err = MapRowsToSliceOfStruct(rows, &threads, true)
 	}
 	return
 }

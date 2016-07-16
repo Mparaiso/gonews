@@ -4,6 +4,11 @@
     max-width: 730px;
   }
 }
+.vote{
+	/* up/dow arrows */
+	font-size:1.6em;
+	vertical-align: sub;
+}
 /* / */
 ol.threads{
 	padding-left: 15px;
