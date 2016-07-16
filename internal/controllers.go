@@ -16,7 +16,7 @@ func ThreadIndexController(c *Container, rw http.ResponseWriter, r *http.Request
 	var threads Threads
 	repository, err := c.GetThreadRepository()
 	if err == nil {
-		threads, err = repository.GetThreadsOrderedByVoteCount(100, 0)
+		threads, err = repository.GetSortedByScore(100, 0)
 		if err == nil {
 			err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_list.tpl.html", map[string]interface{}{
 				"Threads": threads,

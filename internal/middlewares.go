@@ -34,6 +34,9 @@ func RefreshUserMiddleware(c *Container, rw http.ResponseWriter, r *http.Request
 		if err == nil {
 			if user != nil {
 				c.SetCurrentUser(user)
+			} else {
+				session.Delete("user.ID")
+				c.SetCurrentUser(nil)
 			}
 		} else {
 			c.HTTPError(rw, r, 500, err)

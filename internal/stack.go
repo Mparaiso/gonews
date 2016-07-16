@@ -34,7 +34,11 @@ func (s *Stack) Shift(m Middleware) *Stack {
 
 // Clone clones *Stack
 func (s *Stack) Clone() *Stack {
-	return &Stack{Middlewares: s.Middlewares[:], ContainerFactory: s.ContainerFactory}
+	var middlewares []Middleware
+	for _, middleware := range s.Middlewares {
+		middlewares = append(middlewares, middleware)
+	}
+	return &Stack{Middlewares: middlewares, ContainerFactory: s.ContainerFactory}
 }
 
 // Build returns a function that returns a http.HandlerFunc

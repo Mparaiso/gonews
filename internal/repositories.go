@@ -348,7 +348,7 @@ func (repository ThreadRepository) GetThreadByIDWithCommentsAndTheirAuthors(id i
 }
 
 // GetThreadsOrderedByVoteCount returns threads ordered by thread vote count
-func (repository ThreadRepository) GetThreadsOrderedByVoteCount(limit, offset int) (threads Threads, err error) {
+func (repository ThreadRepository) GetSortedByScore(limit, offset int) (threads Threads, err error) {
 	query := `
 		SELECT t.ID,
 		       t.AuthorID,
@@ -381,7 +381,7 @@ func (repository ThreadRepository) GetThreadsOrderedByVoteCount(limit, offset in
 	var (
 		rows *sql.Rows
 	)
-	defer repository.Logger.Debug(query, limit, offset)
+	repository.Logger.Debug(query, limit, offset)
 	rows, err = repository.DB.Query(query, limit, offset)
 	if err == nil {
 		err = MapRowsToSliceOfStruct(rows, &threads, true)
