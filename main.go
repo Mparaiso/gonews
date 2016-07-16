@@ -59,7 +59,7 @@ func main() {
 	// start flags
 	startFlagSet := flag.NewFlagSet("start", flag.ExitOnError)
 	startFlagSet.BoolVar(&startOptions.Debug, "debug", false, "Starts the application in Debug mode.")
-	startFlagSet.StringVar(&startOptions.Host, "host", "localhost", "Host address of the server, example : localhost")
+	startFlagSet.StringVar(&startOptions.Host, "host", "0.0.0.0", "Host address of the server, example : localhost")
 	startFlagSet.StringVar(&startOptions.Port, "port", "8080", "Server port, example: 8080")
 	startFlagSet.StringVar(&startOptions.Env, "env", "development", "Current environment, examples: -env=developement , -env=test ")
 	startFlagSet.StringVar(&startOptions.Secret, "secret", defaultSecret, "Secret key used for encryption, example -secret=\"my-secret-key\"")
