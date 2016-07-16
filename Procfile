@@ -1,1 +1,1 @@
-web: gonews start -port=$PORT -migrate
+web: gonews start -port=$PORT -migrate -loglevel=0
