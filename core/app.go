@@ -1,4 +1,19 @@
-// @Copyright (c) 2016 mparaiso <mparaiso@online.fr>  All rights reserved.
+//    Gonews is a webapp that provides a forum where users can post and discuss links
+//
+//    Copyright (C) 2016  mparaiso <mparaiso@online.fr>
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU Affero General Public License as published
+//    by the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU Affero General Public License for more details.
+//
+//    You should have received a copy of the GNU Affero General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package gonews
 
@@ -11,25 +26,6 @@ import (
 
 	"github.com/gorilla/sessions"
 )
-
-// Route olds routes
-
-type Route struct{}
-
-func (Route) StoriesByScore() string  { return "/" }
-func (Route) NewStories() string      { return "/newest" }
-func (Route) NewComments() string     { return "/newcomments" }
-func (Route) Thread() string          { return "/item" }
-func (Route) Reply() string           { return "/reply" }
-func (Route) ThreadsByDomain() string { return "/from" }
-func (Route) AuthorComments() string  { return "/threads" }
-func (Route) AuthorStories() string   { return "/submitted" }
-func (Route) Login() string           { return "/login" }
-func (Route) Registration() string    { return "/register" }
-func (Route) Public() string          { return "/public" }
-func (Route) Logout() string          { return "/logout" }
-func (Route) UserProfile() string     { return "/user" }
-func (Route) CreateStory() string     { return "/submit" }
 
 // GetApp returns an application ready to be handled by a server
 func GetApp(appOptions AppOptions) http.Handler {
@@ -65,6 +61,10 @@ func GetApp(appOptions AppOptions) http.Handler {
 
 			return container
 		}
+	}
+	// migrations
+	if appOptions.Migrate == true {
+
 	}
 	// This is the default middleware stack each requests pass through all these middlewares
 	// before being handled by a controller (which is also a middleware FYI )
@@ -136,6 +136,7 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 			Debug:                 false,
 			LogLevel:              INFO,
 			Title:                 "gonews",
+			Environment:           "development",
 			Slogan:                "the news site for gophers",
 			Description:           "gonews is a site where gophers publish and discuss news about the go language",
 			DataSource:            "db.sqlite3",
@@ -163,7 +164,33 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 
 // AppOptions gather all the configuration options
 type AppOptions struct {
-	PublicDirectory string
+	Migrate bool
+	PublicDirectory,
+	// Current App Environment : development,production,staging,testing
+	Environment string
 	ContainerOptions
 	ContainerFactory func() *Container
 }
+
+// Route configures URIs
+type Route struct{}
+
+// StoriesByScore is the index
+func (Route) StoriesByScore() string { return "/" }
+
+// NewStories URI displays stories by age
+func (Route) NewStories() string { return "/newest" }
+
+// NewComments URI displays comments by age
+func (Route) NewComments() string     { return "/newcomments" }
+func (Route) Thread() string          { return "/item" }
+func (Route) Reply() string           { return "/reply" }
+func (Route) ThreadsByDomain() string { return "/from" }
+func (Route) AuthorComments() string  { return "/threads" }
+func (Route) AuthorStories() string   { return "/submitted" }
+func (Route) Login() string           { return "/login" }
+func (Route) Registration() string    { return "/register" }
+func (Route) Public() string          { return "/public/" }
+func (Route) Logout() string          { return "/logout" }
+func (Route) UserProfile() string     { return "/user" }
+func (Route) CreateStory() string     { return "/submit" }

@@ -1,0 +1,1 @@
+web: gonews start -port=$PORT -migrate
