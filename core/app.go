@@ -63,7 +63,7 @@ func GetApp(appOptions AppOptions) http.Handler {
 		}
 	}
 
-	DefaultStack := GetDefaultStack()
+	DefaultStack := GetDefaultStack(appOptions.ContainerFactory)
 
 	Default := DefaultStack.Clone().Build()
 	// Usef for authenticated routes
@@ -151,7 +151,7 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 }()
 
 // GetDefaultStack returns the default middleware stack
-func GetDefaultStack() *Stack {
+func GetDefaultStack(factory ContainerFactory) *Stack {
 	// This is the default middleware stack each requests pass through all these middlewares
 	// before being handled by a controller (which is also a middleware FYI )
 	return &Stack{
@@ -161,7 +161,7 @@ func GetDefaultStack() *Stack {
 			SessionMiddleware,     // Initializes the session
 			RefreshUserMiddleware, // Refresh an authenticated user if user.ID exists in session
 			TemplateMiddleware,    // Configures template environment
-		}, ContainerFactory: appOptions.ContainerFactory}
+		}, ContainerFactory: factory}
 }
 
 // AppOptions gather all the configuration options
