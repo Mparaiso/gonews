@@ -18,6 +18,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -72,15 +73,11 @@ func main() {
 			startOptions.Port = os.Getenv(string(startOptions.Port[1:]))
 		}
 
-		options := gonews.DefaultContainerOptions()
-		options.Debug = startOptions.Debug
 		connection, connectionErr := sql.Open(startOptions.Driver, startOptions.DataSource)
 		if connectionErr != nil {
 			log.Fatal(connectionErr)
 		}
-		options.ConnectionFactory = func() (*sql.DB, error) {
-			return connection, connectionErr
-		}
+
 		// warnings
 		if startOptions.Env != "production" {
 			log.Printf("You are using '%s' environment, please use option -env=production in production", startOptions.Env)
@@ -97,9 +94,20 @@ func main() {
 			}
 			log.Printf("%d migrations executed", i)
 		}
+		// loading fixtures
+		if startOptions.LoadFixtures {
+			log.Println("loading fixtures ... ")
+			LoadFixtures(connection, startOptions.Driver)
+			log.Println("done loading fixtures.")
+		}
 		// start server
-		appOptions := gonews.AppOptions{ContainerOptions: options}
-		appOptions.ContainerOptions.LogLevel = gonews.LogLevel(startOptions.LogLevel)
+		containerOptions := gonews.DefaultContainerOptions()
+		containerOptions.LogLevel = gonews.LogLevel(startOptions.LogLevel)
+		containerOptions.Debug = startOptions.Debug
+		containerOptions.ConnectionFactory = func() (*sql.DB, error) {
+			return connection, connectionErr
+		}
+		appOptions := gonews.AppOptions{ContainerOptions: containerOptions}
 		app := gonews.GetApp(appOptions)
 		addr := startOptions.Host + ":" + startOptions.Port
 		fmt.Printf("Server Listening On: %s\n", addr)
@@ -125,6 +133,7 @@ func DeclareStartOptions() (*StartOptions, *flag.FlagSet) {
 	startOptions := &StartOptions{}
 	startFlagSet := flag.NewFlagSet("start", flag.ExitOnError)
 	startFlagSet.BoolVar(&startOptions.Debug, "debug", false, "Starts the application in Debug mode.")
+	startFlagSet.BoolVar(&startOptions.LoadFixtures, "loadfixtures", false, "Load sample datas into the database, should obviously be executed only once.")
 	startFlagSet.StringVar(&startOptions.Host, "host", "0.0.0.0", "Host address of the server, example : localhost")
 	startFlagSet.StringVar(&startOptions.Port, "port", "8080", "Server port, example: 8080")
 	startFlagSet.StringVar(&startOptions.Env, "env", "development", "Current environment, examples: -env=developement , -env=test ")
@@ -141,10 +150,40 @@ func DeclareStartOptions() (*StartOptions, *flag.FlagSet) {
 // StartOptions are arguments passed to the commandline
 // when start action is invoked
 type StartOptions struct {
-	Debug, Migrate bool
+	Debug, Migrate, LoadFixtures bool
 	Host, Port,
 	Env, Driver,
 	DataSource, MigrationPath,
 	Secret string
 	LogLevel int
+}
+
+// LoadFixtures loads test fixtures in a transaction
+// if the transaction fails, no fatal error is triggered
+func LoadFixtures(db *sql.DB, driver string) *sql.DB {
+
+	migrationFile, err := os.Open("./testdata/fixtures/" + driver + "/fixtures.sql")
+	if err != nil {
+		log.Fatal(err)
+	}
+	buffer := new(bytes.Buffer)
+	_, err = buffer.ReadFrom(migrationFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = tx.Exec(buffer.String())
+	if err != nil {
+		log.Printf("Error loading fixtures, %s", err)
+		tx.Rollback()
+	} else {
+		err = tx.Commit()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	return db
 }

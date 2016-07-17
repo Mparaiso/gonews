@@ -204,35 +204,7 @@ func (repository ThreadRepository) Create(thread *Thread) error {
 
 // GetWhereURLLike returns threads where url like pattern
 func (repository ThreadRepository) GetWhereURLLike(pattern string) (threads Threads, err error) {
-	query := `SELECT t.id as ID ,
-       t.title AS Title,
-       t.url AS URL,
-       t.created AS Created,
-       t.updated AS Updated,
-       t.author_id AS AuthorID,
-	   t.username AS AuthorName,
-       COALESCE(SUM(thread_votes.score),0) AS Score,
-       CommentCount
-  	FROM (
-           SELECT threads.id ,
-                  threads.title,
-                  threads.url,
-                  threads.created,
-                  threads.updated,
-                  threads.author_id,
-				  users.username,
-                  COALESCE(COUNT(comments.id), 0) AS CommentCount
-             FROM threads,users
-                  LEFT JOIN
-                  comments ON comments.thread_id = threads.id
-            WHERE threads.url LIKE ? 
-				  AND users.id = threads.author_id
-            GROUP BY threads.id
-            ORDER BY threads.created DESC
-    ) t
-    LEFT JOIN
-    thread_votes ON thread_votes.thread_id = t.id
- 	GROUP BY t.id;`
+	query := `SELECT * FROM threads_view WHERE URL LIKE ? ;`
 	repository.Logger.Debug(query, pattern)
 	var rows *sql.Rows
 	rows, err = repository.DB.Query(query, pattern)
@@ -254,32 +226,7 @@ func (repository ThreadRepository) GetByAuthorID(id int64) (threads Threads, err
 	// we query the database, first by search threads by author_id with the commentcount
 	// then by aggregating the sum of thread_votes.score
 	// TODO refactor as a view in the database
-	query := `SELECT t.id as ID ,
-       t.title AS Title,
-       t.url AS URL,
-       t.created AS Created,
-       t.updated AS Updated,
-       t.author_id AS AuthorID,
-       COALESCE(SUM(thread_votes.score),0) AS Score,
-       CommentCount
-  	FROM (
-           SELECT threads.id ,
-                  threads.title,
-                  threads.url,
-                  threads.created,
-                  threads.updated,
-                  threads.author_id,
-                  COALESCE(COUNT(comments.id), 0) AS CommentCount
-             FROM threads
-                  LEFT JOIN
-                  comments ON comments.thread_id = threads.id
-            WHERE threads.author_id = 1
-            GROUP BY threads.id
-            ORDER BY threads.created DESC
-    ) t
-    LEFT JOIN
-    thread_votes ON thread_votes.thread_id = t.id
- 	GROUP BY t.id;`
+	query := `SELECT * FROM threads_view WHERE AuthorID = ? ;`
 	repository.log(query, id)
 	rows, err := repository.DB.Query(query, id)
 	if err != nil {
@@ -366,35 +313,7 @@ func (repository ThreadRepository) GetThreadByIDWithCommentsAndTheirAuthors(id i
 
 // GetThreadsOrderedByVoteCount returns threads ordered by thread vote count
 func (repository ThreadRepository) GetSortedByScore(limit, offset int) (threads Threads, err error) {
-	query := `
-		SELECT t.ID,
-		       t.AuthorID,
-		       t.Title,
-		       t.Created,
-		       t.URL,
-		       t.Score,
-		       t.AuthorName,
-		       coalesce(COUNT(c.id), 0) AS CommentCount
-		FROM (
-			SELECT threads.id AS ID,
-			       threads.author_id AS AuthorID,
-			       threads.title AS Title,
-			       threads.created AS Created,
-			       threads.url AS URL,
-			       u.username AS AuthorName,
-			       coalesce(SUM(thread_votes.score), 0) AS Score
-			FROM threads
-			JOIN
-			    users u ON u.id = threads.author_id
-			LEFT JOIN
-				thread_votes ON thread_votes.thread_id = threads.id
-			 GROUP BY threads.id
-       	) t
-       	LEFT JOIN
-       		comments c ON c.thread_id = t.ID
-       	GROUP BY t.ID
- 		ORDER BY t.Score DESC, t.Created DESC
-		LIMIT ? OFFSET ? ;`
+	query := "SELECT * FROM threads_view ORDER BY Created DESC, Score DESC ;"
 	var (
 		rows *sql.Rows
 	)
@@ -408,35 +327,7 @@ func (repository ThreadRepository) GetSortedByScore(limit, offset int) (threads 
 
 // GetOrderedByCreatedDesc returns threads ordered by age DESC
 func (repository ThreadRepository) GetNewest() (threads Threads, err error) {
-	query := `
-		SELECT t.id AS ID,
-			t.title AS Title,
-			t.url AS URL,
-			t.created AS Created,
-			t.score AS Score,
-			t.author_id AS AuthorID,
-			t.username AS AuthorName,
-			coalesce(COUNT(c.id), 0) AS CommentCount
-		FROM (
-				SELECT t.id,
-						t.title,
-						t.url,
-						t.created,
-						t.author_id,
-						u.username,
-						coalesce(SUM(tv.score), 0) AS score
-					FROM threads t,
-						users u
-						LEFT JOIN
-						thread_votes tv ON tv.thread_id = t.id
-						WHERE t.author_id = u.id
-					GROUP BY t.id
-			) t
-			LEFT JOIN
-			comments c ON c.thread_id = t.id
-		GROUP BY t.id
-		ORDER BY t.created DESC ,t.score DESC;
-		`
+	query := "SELECT * FROM threads_view ORDER BY Created DESC ;"
 	repository.Logger.Debug(query)
 	var (
 		rows *sql.Rows

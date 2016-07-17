@@ -1,3 +1,4 @@
+-- test fixtures , used during tests
 -- password: $2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2
 
 -- users

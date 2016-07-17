@@ -63,7 +63,7 @@ func Test_Visiting_the_homepage(t *testing.T) {
 // When /from?site=hipsters.acme is requested
 // It should respond with status 200
 // It should display the correct number of threads
-func Test_Requesting_stories_By_Domain(t *testing.T) {
+func TestRequestingStoriesByDomain(t *testing.T) {
 	// Given a server
 	var err error
 	site := "hipsters.acme"
@@ -106,7 +106,7 @@ func Test_Requesting_stories_By_Domain(t *testing.T) {
 // When /threads?id=1 is requested
 // It should respond with status 200
 // It should display the correct number of comments belonging to user with id 1
-func Test_Requesting_comments_By_User(t *testing.T) {
+func TestRequestingCommentsByUser(t *testing.T) {
 	var err error
 	db := GetDB(t)
 	defer db.Close()
@@ -141,12 +141,12 @@ func Test_Requesting_comments_By_User(t *testing.T) {
 	}
 }
 
-// Scenario: REQUESING A STORY BY ID
+// Scenario: REQUESTING A STORY BY ID
 // Given a server
 // When /item?id=1 is requested
 // It should respond with status 200
 // The correct number of comments should be displayed
-func Test_Story_By_ID(t *testing.T) {
+func TestRequestingAStoryByID(t *testing.T) {
 	//	Given a server
 	server := GetServer(t)
 	defer server.Close()
