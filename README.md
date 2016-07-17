@@ -1,7 +1,9 @@
 Gonews
 ======
 
-[![Build Status](https://travis-ci.org/Mparaiso/gonews.svg?branch=master)](https://travis-ci.org/Mparaiso/gonews)
+[![Build Status](https://travis-ci.org/Mparaiso/gonews.svg?branch=master)](https://travis-ci.org/Mparaiso/gonews) 
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/Mparaiso/gonews)](https://goreportcard.com/report/github.com/Mparaiso/gonews)
 
 author: mparaiso <mparaiso@online.fr>
 
