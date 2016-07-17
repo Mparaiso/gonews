@@ -1,6 +1,7 @@
 package: github.com/mparaiso/gonews
 import:
 - package: github.com/gorilla/Schema
+- package: github.com/gorilla/securecookie
 - package: github.com/gorilla/context
   version: ^1.1.0
 - package: github.com/gorilla/sessions
