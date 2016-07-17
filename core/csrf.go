@@ -19,10 +19,17 @@ package gonews
 
 import (
 	// "fmt"
+	"github.com/gorilla/securecookie"
 	"golang.org/x/net/xsrftoken"
 )
 
-// TODO fix tokens and sessions
+const CsrfSessionKey = "csrf-unique-id"
+
+// CSRFGenerator generates and validate csrf tokens
+type CSRFGenerator interface {
+	Generate(actionID string) string
+	Valid(token, actionID string) bool
+}
 
 // DefaultCSRFProvider implements CSRFProvider
 type DefaultCSRFGenerator struct {
@@ -31,20 +38,15 @@ type DefaultCSRFGenerator struct {
 }
 
 // Generate generates a new token
-func (d *DefaultCSRFGenerator) Generate(userID, actionID string) string {
-	t := xsrftoken.Generate(d.Secret, userID, actionID)
-	// tokenNameInSession := fmt.Sprintf("%v-%v", userID, actionID)
-	// d.Session.Set(tokenNameInSession, t)
+func (d *DefaultCSRFGenerator) Generate(actionID string) string {
+	if !d.Session.Has(CsrfSessionKey) {
+		d.Session.Set(CsrfSessionKey, string(securecookie.GenerateRandomKey(16)))
+	}
+	t := xsrftoken.Generate(d.Secret, d.Session.Get(CsrfSessionKey).(string), actionID)
 	return t
 }
 
 // Valid valides a token
-func (d *DefaultCSRFGenerator) Valid(token, userID, actionID string) bool {
-	//tokenNameInSession := fmt.Sprintf("%v-%v", userID, actionID)
-	// t := fmt.Sprint(d.Session.Get(tokenNameInSession))
-	// d.Session.Set(tokenNameInSession, nil)
-	// if t != token {
-	// 	return false
-	// }
-	return xsrftoken.Valid(token, d.Secret, userID, actionID)
+func (d *DefaultCSRFGenerator) Valid(token, actionID string) bool {
+	return xsrftoken.Valid(token, d.Secret, d.Session.Get(CsrfSessionKey).(string), actionID)
 }

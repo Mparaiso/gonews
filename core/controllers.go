@@ -165,9 +165,9 @@ func LogoutController(c *Container, rw http.ResponseWriter, r *http.Request, nex
 func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	switch r.Method {
 	case "GET":
-		loginCSRF := c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "login")
+		loginCSRF := c.MustGetCSRFGenerator().Generate("login")
 		loginForm := &LoginForm{CSRF: loginCSRF, Name: "login"}
-		registrationCSRF := c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "registration")
+		registrationCSRF := c.MustGetCSRFGenerator().Generate("registration")
 		registrationForm := &RegistrationForm{CSRF: registrationCSRF, Name: "registration"}
 		err := c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
 			"LoginForm":        loginForm,
@@ -191,7 +191,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 			c.HTTPError(rw, r, 500, err)
 			return
 		}
-		loginFormValidator := &LoginFormValidator{c.MustGetCSRFGenerator(), r}
+		loginFormValidator := &LoginFormValidator{c.MustGetCSRFGenerator()}
 		err = loginFormValidator.Validate(loginForm)
 		// authenticate user
 		if err == nil {
@@ -212,7 +212,7 @@ func LoginController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 
 		rw.WriteHeader(http.StatusBadRequest)
-		registrationCSRF := c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "registration")
+		registrationCSRF := c.MustGetCSRFGenerator().Generate("registration")
 		registrationForm := &RegistrationForm{CSRF: registrationCSRF, Name: "registration"}
 		c.MustGetLogger().Error(err)
 		err = c.MustGetTemplate().ExecuteTemplate(rw, "login.tpl.html", map[string]interface{}{
@@ -297,7 +297,7 @@ func SubmitStoryController(c *Container, rw http.ResponseWriter, r *http.Request
 		return
 	}
 	thread := &Thread{}
-	submissionForm := &SubmissionForm{CSRF: c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "submission")}
+	submissionForm := &SubmissionForm{CSRF: c.MustGetCSRFGenerator().Generate("submission")}
 	submissionForm.SetModel(thread)
 	switch r.Method {
 	case "GET":
@@ -313,7 +313,7 @@ func SubmitStoryController(c *Container, rw http.ResponseWriter, r *http.Request
 			c.HTTPError(rw, r, 500, err)
 			return
 		}
-		submissionFormValidator := &SubmissionFormValidator{c.MustGetCSRFGenerator(), r}
+		submissionFormValidator := &SubmissionFormValidator{c.MustGetCSRFGenerator()}
 		err = submissionFormValidator.Validate(submissionForm)
 		if err == nil {
 			thread := submissionForm.Model()
@@ -363,7 +363,7 @@ func ReplyController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 		comment := &Comment{ThreadID: parentComment.ThreadID, ParentID: parentComment.ID}
 
-		form := &CommentForm{CSRF: c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "comment"), Goto: q.Goto}
+		form := &CommentForm{CSRF: c.MustGetCSRFGenerator().Generate("comment"), Goto: q.Goto}
 		form.SetModel(comment)
 		err = c.MustGetTemplate().ExecuteTemplate(rw, "comment_create.tpl.html", map[string]interface{}{
 			"ParentComment": parentComment,
@@ -375,14 +375,14 @@ func ReplyController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 		return
 	case "POST":
-		form := &CommentForm{CSRF: c.MustGetCSRFGenerator().Generate(r.RemoteAddr, "comment")}
+		form := &CommentForm{CSRF: c.MustGetCSRFGenerator().Generate("comment")}
 		form.SetModel(&Comment{AuthorID: c.CurrentUser().ID})
 		err := form.HandleRequest(r)
 		if err != nil {
 			c.HTTPError(rw, r, 500, err)
 			return
 		}
-		formValidator := &CommentFormValidator{c.MustGetCSRFGenerator(), r}
+		formValidator := &CommentFormValidator{c.MustGetCSRFGenerator()}
 		err = formValidator.Validate(form)
 		if err == nil {
 			comment := form.Model()

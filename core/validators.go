@@ -80,7 +80,6 @@ func (uv UserValidator) Validate(u *User) ValidationError {
 // CommentFormValidator validates a comment form
 type CommentFormValidator struct {
 	CSRFGenerator
-	*http.Request
 }
 
 // Validate validades a comment form
@@ -91,8 +90,8 @@ func (validator *CommentFormValidator) Validate(form *CommentForm) ValidationErr
 	StringMaxLengthValidator("Content", form.Content, 500, &errors)
 
 	PatternValidator("Goto", form.Goto, regexp.MustCompile(`^\/\S+\?\S+$`), &errors)
-	CSRFValidator("CRSF", form.CSRF, validator.CSRFGenerator, validator.Request.RemoteAddr, "comment", &errors)
-	form.CSRF = validator.CSRFGenerator.Generate(validator.Request.RemoteAddr, "comment")
+	CSRFValidator("CRSF", form.CSRF, validator.CSRFGenerator, "comment", &errors)
+	form.CSRF = validator.CSRFGenerator.Generate("comment")
 	if errors.HasErrors() {
 		form.Errors = errors
 		return errors
@@ -102,14 +101,13 @@ func (validator *CommentFormValidator) Validate(form *CommentForm) ValidationErr
 
 // RegistrationFormValidator is a RegistrationForm validator
 type RegistrationFormValidator struct {
-	request        *http.Request
 	csrfProvider   CSRFGenerator
 	userRepository UserFinder
 }
 
 // NewRegistrationFormValidator creates an new RegistrationFormValidator
 func NewRegistrationFormValidator(request *http.Request, csrfProvider CSRFGenerator, userFinder UserFinder) *RegistrationFormValidator {
-	return &RegistrationFormValidator{request, csrfProvider, userFinder}
+	return &RegistrationFormValidator{csrfProvider, userFinder}
 }
 
 // Validate returns nil if no error were found
@@ -117,8 +115,8 @@ func (validator *RegistrationFormValidator) Validate(form *RegistrationForm) Val
 	errors := ConcreteValidationError{}
 	// CSRF
 	StringNotEmptyValidator("CSRF", form.CSRF, &errors)
-	CSRFValidator("CSRF", form.CSRF, validator.csrfProvider, validator.request.RemoteAddr, "registration", &errors)
-	form.CSRF = validator.csrfProvider.Generate(validator.request.RemoteAddr, "registration")
+	CSRFValidator("CSRF", form.CSRF, validator.csrfProvider, "registration", &errors)
+	form.CSRF = validator.csrfProvider.Generate("registration")
 	// Username
 	StringNotEmptyValidator("Username", form.Username, &errors)
 	StringMinLengthValidator("Username", form.Username, 5, &errors)
@@ -152,7 +150,6 @@ func (validator *RegistrationFormValidator) Validate(form *RegistrationForm) Val
 // LoginFormValidator is a validator for LoginForm
 type LoginFormValidator struct {
 	csrfProvider CSRFGenerator
-	request      *http.Request
 }
 
 // Validate validates a login form
@@ -160,8 +157,8 @@ func (validator *LoginFormValidator) Validate(form *LoginForm) ValidationError {
 	errors := ConcreteValidationError{}
 	StringNotEmptyValidator("Username", form.Username, &errors)
 	StringNotEmptyValidator("Password", form.Password, &errors)
-	CSRFValidator("CSRF", form.CSRF, validator.csrfProvider, validator.request.RemoteAddr, "login", &errors)
-	form.CSRF = validator.csrfProvider.Generate(validator.request.RemoteAddr, "login")
+	CSRFValidator("CSRF", form.CSRF, validator.csrfProvider, "login", &errors)
+	form.CSRF = validator.csrfProvider.Generate("login")
 
 	if !errors.HasErrors() {
 		return nil
@@ -172,15 +169,14 @@ func (validator *LoginFormValidator) Validate(form *LoginForm) ValidationError {
 
 type SubmissionFormValidator struct {
 	CSRFGenerator
-	*http.Request
 }
 
 // Validate validates a submission form
 func (validator *SubmissionFormValidator) Validate(form *SubmissionForm) ValidationError {
 	errors := ConcreteValidationError{}
 
-	CSRFValidator("CSRF", form.CSRF, validator.CSRFGenerator, validator.Request.RemoteAddr, "submission", &errors)
-	form.CSRF = validator.CSRFGenerator.Generate(validator.Request.RemoteAddr, "submission")
+	CSRFValidator("CSRF", form.CSRF, validator.CSRFGenerator, "submission", &errors)
+	form.CSRF = validator.CSRFGenerator.Generate("submission")
 	StringNotEmptyValidator("Title", form.Title, &errors)
 	StringMaxLengthValidator("Title", form.Title, 100, &errors)
 	StringMinLengthValidator("Title", form.Title, 5, &errors)
@@ -267,8 +263,8 @@ func PatternValidator(field, value string, pattern *regexp.Regexp, errors Valida
 }
 
 // CSRFValidator validates a CSRF Token
-func CSRFValidator(field string, value string, csrfProvider CSRFGenerator, remoteAddr, action string, errors ValidationError) {
-	if !csrfProvider.Valid(value, remoteAddr, action) {
+func CSRFValidator(field string, value string, csrfProvider CSRFGenerator, action string, errors ValidationError) {
+	if !csrfProvider.Valid(value, action) {
 		errors.Append(field, "invalid token")
 	}
 }

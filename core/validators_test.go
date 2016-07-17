@@ -19,7 +19,6 @@ package gonews_test
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"database/sql"
@@ -35,17 +34,14 @@ import (
 
 func TestValidatingASubmissionForm(t *testing.T) {
 	// Given a submission form validator
-	req, err := http.NewRequest("POST", "http://foo.com/submit", strings.NewReader("request body"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	validator := &gonews.SubmissionFormValidator{CSRFGenerator: TestCSRFProvider{}, Request: req}
+
+	validator := &gonews.SubmissionFormValidator{CSRFGenerator: TestCSRFProvider{}}
 	submissionForm := &gonews.SubmissionForm{Name: "Submission form",
-		CSRF:  TestCSRFProvider{}.Generate("", ""),
+		CSRF:  TestCSRFProvider{}.Generate("someaction"),
 		Title: "The Title",
 		URL:   "http://foo.bar.com"}
 	// If a valid submission form is validated
-	err = validator.Validate(submissionForm)
+	err := validator.Validate(submissionForm)
 	// It should return no errors
 	if err != nil {
 		t.Fatal(err)
@@ -115,10 +111,10 @@ func Test_RegistrationFormValidator_valid_registrationForm(t *testing.T) {
 // CSRFProvider provide csrf tokens
 type TestCSRFProvider struct{}
 
-func (TestCSRFProvider) Generate(userID, actionID string) string {
+func (TestCSRFProvider) Generate(actionID string) string {
 	return "csrf-token"
 }
-func (TestCSRFProvider) Valid(token, userID, actionID string) bool {
+func (TestCSRFProvider) Valid(token, actionID string) bool {
 	return token == "csrf-token"
 }
 
