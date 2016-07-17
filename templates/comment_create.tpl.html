@@ -1,6 +1,9 @@
+{{/* displays a parent comment if exists and a form to submit a reply */}}
 {{ block "comment_create" . }}
     {{ template "header" . }}
-    {{ template "comment_partial" .Data.ParentComment }}
+	{{ with .Data.ParentComment }}
+    	{{ template "comment_partial" . }}
+	{{ end }}
     {{ template "comment_form" .Data.CommentForm }}
     {{ template "footer" . }}
 {{ end }}

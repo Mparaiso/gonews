@@ -1,7 +1,6 @@
 	{{define "comments" }}
 		<div class="comments">
 			{{ range . -}}
-				<a name="{{.ID}}">
 				{{ template "comment_partial" . }}
 				{{ if .HasChildren }}
 					<div class="children">

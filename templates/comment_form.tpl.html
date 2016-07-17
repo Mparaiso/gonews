@@ -5,7 +5,7 @@
         <legend><small>Add Comment</small></legend>
         <div class="form-group">
             <div class="col-sm-12">
-                {{ with .Errors }} {{ template "list_form_errors" .Errors.CSRF }} {{ end }}
+                {{ with .Errors }} {{ template "list_form_errors" .CSRF }} {{ end }}
                 <!-- goto -->
                 <input type="hidden" name="comment_goto" value="{{- .Goto -}}">
                 <!-- csrf -->
@@ -20,7 +20,7 @@
         <div class="form-group">
             <label for="content" class="control-label"></label>
             <div class="col-sm-10">
-                 {{ with .Errors }} {{ template "list_form_errors" .Errors.Content }} {{ end }}
+                 {{ with .Errors }} {{ template "list_form_errors" .Content }} {{ end }}
                 <textarea name="comment_content" required id="comment_content" class="form-control " rows="5">
 					{{- .Content -}}
 					</textarea>
