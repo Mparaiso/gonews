@@ -28,12 +28,12 @@ import (
 	gonews "github.com/mparaiso/gonews/core"
 )
 
-//	Scenario:
+//	Scenario: ValidatingASubmissionForm
 //	Given a submission form validator
 //	If a valid submission form is validated
 //	It should return no errors
 
-func TestSubmissionFormValidator(t *testing.T) {
+func TestValidatingASubmissionForm(t *testing.T) {
 	// Given a submission form validator
 	req, err := http.NewRequest("POST", "http://foo.com/submit", strings.NewReader("request body"))
 	if err != nil {

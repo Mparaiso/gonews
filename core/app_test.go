@@ -18,41 +18,16 @@
 package gonews_test
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/cookiejar"
-	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"time"
-
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/mparaiso/gonews/core"
-	"github.com/rubenv/sql-migrate"
-
-	"flag"
-	"net/url"
-	"runtime"
-	"strings"
 )
-
-// DEBUG will allows the test to output additional informations
-var DEBUG = false
-
-// Allows arguments to be passed to test
-// ex: go test -args -debug
-func TestMain(m *testing.M) {
-	debug := flag.Bool("debug", DEBUG, "debug the test suite")
-
-	flag.Parse()
-	DEBUG = *debug
-	os.Exit(m.Run())
-}
 
 // Scenario: VISITING THE HOMEPAGE
 // Given a server
@@ -776,157 +751,4 @@ func TestDisplayingNewestStoriesPage(t *testing.T) {
 	commentID := doc.Find(".thread").First().AttrOr("data-thread-id", "")
 	// It should display the newest story first
 	Expect(t, commentID, fmt.Sprintf("%d", id), ".thread[data-thread-id]")
-}
-
-//
-// HELPERS AND FIXTURES
-//
-
-// Directory is the current directory
-var Directory = func() string {
-	dir, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	return dir
-}()
-
-// GetDB gets the db connection
-func GetDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
-	return db
-}
-
-// MigrateUp executes db migrations
-func MigrateUp(db *sql.DB, t *testing.T) *sql.DB {
-	_, err := migrate.Exec(db, "sqlite3", migrate.FileMigrationSource{"./../migrations/development/sqlite3"}, migrate.Up)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return db
-}
-
-// GetContainerOptions returns container options for tests
-func GetContainerOptions(db *sql.DB) gonews.ContainerOptions {
-	options := gonews.DefaultContainerOptions()
-	options.Debug = DEBUG
-	options.TemplateDirectory = "./../" + options.TemplateDirectory
-	options.ConnectionFactory = func() (*sql.DB, error) {
-		return db, nil
-	}
-	options.LogLevel = gonews.OFF
-	return options
-}
-
-// GetServer sets up the test server with an optional db and returns the test server
-func GetServer(t *testing.T, dbs ...*sql.DB) *httptest.Server {
-	// Set Up
-	var db *sql.DB
-	if len(dbs) == 0 {
-		db = GetDB(t)
-	} else {
-		db = dbs[0]
-	}
-	MigrateUp(db, t)
-	app := gonews.GetApp(gonews.AppOptions{ContainerOptions: GetContainerOptions(db)})
-	server := httptest.NewServer(app)
-
-	logger := &log.Logger{}
-	logger.SetOutput(os.Stdout)
-	server.Config.ErrorLog = logger
-	server.Config.WriteTimeout = 3 * time.Second
-	return server
-}
-
-// LoginUserHelper logs a user before executing a test
-func LoginUser(t *testing.T) (*sql.DB, *httptest.Server, *gonews.User, error) {
-	// GetServer
-	db := GetDB(t)
-	server := GetServer(t, db)
-	unencryptedPassword := "password"
-	user := &gonews.User{Username: "mike_doe", Email: "mike_doe@acme.com"}
-	user.CreateSecurePassword(unencryptedPassword)
-	result, err := db.Exec("INSERT INTO users(username,email,password) values(?,?,?);", user.Username, user.Email, user.Password)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if n, err := result.RowsAffected(); err != nil || n != 1 {
-		t.Fatal(n, err)
-	}
-	if l, err := result.LastInsertId(); err != nil {
-		t.Fatal(err)
-	} else {
-		user.ID = l
-	}
-
-	// @see https://golang.org/pkg/net/http/cookiejar/
-	// @see http://stackoverflow.com/questions/18414212/golang-how-to-follow-location-with-cookie
-	http.DefaultClient.Jar, err = cookiejar.New(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	res, err := http.Get(server.URL + "/login")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromResponse(res)
-	if err != nil {
-		t.Fatal(err)
-	}
-	selection := doc.Find("input[name='login_csrf']")
-
-	csrf, ok := selection.First().Attr("value")
-	if !ok {
-		t.Fatal("csrf not found in HTML document", selection, ok)
-	}
-	if strings.Trim(csrf, " ") == "" {
-		t.Fatal("csrf not found")
-	}
-	formValues := url.Values{
-		"login_username": {user.Username},
-		"login_password": {unencryptedPassword},
-		"login_csrf":     {csrf},
-	}
-	res, err = http.Post(server.URL+"/login", "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
-	defer res.Body.Close()
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if expected, got := 200, res.StatusCode; expected != got {
-		t.Fatalf("POST /login status : expected '%v' got '%v'", expected, got)
-	}
-
-	doc, err = goquery.NewDocumentFromResponse(res)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-	selection = doc.Find(".current-user")
-	if expected, got := 1, selection.Length(); expected != got {
-		t.Fatalf(".current-user length : expect '%v' got '%v' ", expected, got)
-	}
-	return db, server, user, err
-}
-
-// Expect is a helper used to reduce the boilerplate during test
-func Expect(t *testing.T, got, want interface{}, comments ...string) {
-	var comment string
-	if want != got {
-		if len(comments) > 0 {
-			comment = comments[0]
-
-		} else {
-			comment = "Expect"
-		}
-		_, file, line, _ := runtime.Caller(1)
-		t.Fatalf(fmt.Sprintf("Expect\r%s:%d:\r\t%s : %s", filepath.Base(file), line, comment, "want '%v' got '%v'."), want, got)
-	}
 }

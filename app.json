@@ -1,7 +1,0 @@
-{
-    "name": "gonews",
-    "image": "heroku/go:1.6",
-    "mount_di": "src/github.com/mparaiso/gonews",
-    "website": "https://github.com/paraiso/gonews",
-    "repository": "https://github.com/paraiso/gonews"
-}
