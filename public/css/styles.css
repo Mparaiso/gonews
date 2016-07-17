@@ -4,6 +4,9 @@
     max-width: 730px;
   }
 }
+main{
+	min-height:480px;
+}
 .vote{
 	/* up/dow arrows */
 	font-size:1.6em;

@@ -198,11 +198,11 @@ func (repository ThreadRepository) Create(thread *Thread) error {
 }
 
 // GetWhereURLLike returns threads where url like pattern
-func (repository ThreadRepository) GetWhereURLLike(pattern string) (threads Threads, err error) {
-	query := `SELECT * FROM threads_view WHERE URL LIKE ? ;`
-	repository.Logger.Debug(query, pattern)
+func (repository ThreadRepository) GetWhereURLLike(pattern string, limit, offset int) (threads Threads, err error) {
+	query := `SELECT * FROM threads_view WHERE URL LIKE ? LIMIT ? OFFSET ? ;`
+	repository.Logger.Debug(query, pattern, limit, offset)
 	var rows *sql.Rows
-	rows, err = repository.DB.Query(query, pattern)
+	rows, err = repository.DB.Query(query, pattern, limit, offset)
 	if err == nil {
 		err = MapRowsToSliceOfStruct(rows, &threads, true)
 		if err == nil {
@@ -217,13 +217,13 @@ func (repository ThreadRepository) GetWhereURLLike(pattern string) (threads Thre
 }
 
 // GetByAuthorID returns threads filtered by AuthorID
-func (repository ThreadRepository) GetByAuthorID(id int64) (threads Threads, err error) {
+func (repository ThreadRepository) GetByAuthorID(id int64, limit, offset int) (threads Threads, err error) {
 	// we query the database, first by search threads by author_id with the commentcount
 	// then by aggregating the sum of thread_votes.score
 	// TODO refactor as a view in the database
-	query := `SELECT * FROM threads_view WHERE AuthorID = ? ;`
-	repository.log(query, id)
-	rows, err := repository.DB.Query(query, id)
+	query := `SELECT * FROM threads_view WHERE AuthorID = ? LIMIT ? OFFSET ? ;`
+	repository.log(query, id, limit, offset)
+	rows, err := repository.DB.Query(query, id, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (repository ThreadRepository) GetByIDWithComments(id int) (thread *Thread, 
 
 // GetThreadsOrderedByVoteCount returns threads ordered by thread vote count
 func (repository ThreadRepository) GetSortedByScore(limit, offset int) (threads Threads, err error) {
-	query := "SELECT * FROM threads_view ORDER BY Created DESC, Score DESC ;"
+	query := "SELECT * FROM threads_view ORDER BY Created DESC, Score DESC LIMIT ? OFFSET ? ;"
 	var (
 		rows *sql.Rows
 	)
@@ -287,13 +287,13 @@ func (repository ThreadRepository) GetSortedByScore(limit, offset int) (threads 
 }
 
 // GetOrderedByCreatedDesc returns threads ordered by age DESC
-func (repository ThreadRepository) GetNewest() (threads Threads, err error) {
-	query := "SELECT * FROM threads_view ORDER BY Created DESC ;"
-	repository.Logger.Debug(query)
+func (repository ThreadRepository) GetNewest(limit, offset int) (threads Threads, err error) {
+	query := "SELECT * FROM threads_view ORDER BY Created DESC LIMIT ? OFFSET ? ;"
+	repository.Logger.Debug(query, limit, offset)
 	var (
 		rows *sql.Rows
 	)
-	rows, err = repository.DB.Query(query)
+	rows, err = repository.DB.Query(query, limit, offset)
 	if err == nil {
 		err = MapRowsToSliceOfStruct(rows, &threads, true)
 		if err == nil || err == sql.ErrNoRows {

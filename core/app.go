@@ -54,7 +54,7 @@ func GetApp(appOptions AppOptions) http.Handler {
 				container.ContainerOptions.TemplateFileExtension,
 				container.ContainerOptions.Debug, container)
 
-			container.FormDecoderProvider = NewDefaultFormDecoderProvider(new(DefaultFormDecoder))
+			container.FormDecoderProvider = NewDefaultFormDecoderProvider(NewDefaultFormDecoder())
 
 			return container
 		}
@@ -70,7 +70,7 @@ func GetApp(appOptions AppOptions) http.Handler {
 	routes := Route{}
 
 	// index
-	app.HandleFunc(routes.StoriesByScore(), Default(NotFoundMiddleware, FaviconMiddleware, ThreadIndexController))
+	app.HandleFunc(routes.StoriesByScore(), Default(NotFoundMiddleware, FaviconMiddleware, StoriesByScoreController))
 
 	app.HandleFunc(routes.NewComments(), Default(NewCommentsController))
 
@@ -90,7 +90,7 @@ func GetApp(appOptions AppOptions) http.Handler {
 
 	app.HandleFunc(routes.SubmitStory(), AuthenticatedUsersOnly(SubmitStoryController))
 
-	app.HandleFunc(routes.AuthorStories(), Default(AuthorStoriesController))
+	app.HandleFunc(routes.StoriesByAuthor(), Default(StoriesByAuthorController))
 
 	app.HandleFunc(routes.AuthorComments(), Default(AuthorCommentsController))
 
@@ -140,7 +140,7 @@ func (Route) StoryByID() string       { return "/item" }
 func (Route) Reply() string           { return "/reply" }
 func (Route) StoriesByDomain() string { return "/from" }
 func (Route) AuthorComments() string  { return "/threads" }
-func (Route) AuthorStories() string   { return "/submitted" }
+func (Route) StoriesByAuthor() string { return "/submitted" }
 func (Route) Login() string           { return "/login" }
 func (Route) Registration() string    { return "/register" }
 func (Route) Public() string          { return "/public/" }

@@ -14,3 +14,4 @@ import:
 - package: golang.org/x/net
   subpackages:
   - xsrftoken
+- package: gopkg.in/yaml.v2

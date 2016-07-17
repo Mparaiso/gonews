@@ -24,7 +24,7 @@ func TestThreadRepository_GetByAuthorID(t *testing.T) {
 	db := LoadFixtures(MigrateUp(GetDB(t), t), t)
 
 	threadRepository := &gonews.ThreadRepository{DB: db, Logger: gonews.NewDefaultLogger(gonews.OFF)}
-	threads, err := threadRepository.GetByAuthorID(1)
+	threads, err := threadRepository.GetByAuthorID(1, 1000, 0)
 	Expect(t, err, nil)
 	Expect(t, len(threads), 2, "len(threads)")
 	Expect(t, threads[0].ID, int64(1), "threads[0].ID")

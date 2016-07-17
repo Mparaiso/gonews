@@ -260,6 +260,14 @@ func (c *Container) GetSessionStore() (sessions.Store, error) {
 	return c.sessionStore, nil
 }
 
+func (c *Container) GetStoriesPerPage() int {
+	return c.ContainerOptions.StoriesPerPage
+}
+
+func (c *Container) GetCommentsPerPage() int {
+	return c.ContainerOptions.CommentsPerPage
+}
+
 // ContainerOptions are options provided to the container
 type ContainerOptions struct {
 	Environment,
@@ -274,8 +282,10 @@ type ContainerOptions struct {
 	Debug bool
 	LogLevel
 	// Maximum Depth of a comment thread
-	CommentMaxDepth int
-	Session         struct {
+	CommentMaxDepth,
+	CommentsPerPage,
+	StoriesPerPage int
+	Session struct {
 		Name         string
 		StoreFactory func() (sessions.Store, error)
 	}
@@ -315,6 +325,8 @@ var DefaultContainerOptions = func() func() ContainerOptions {
 			TemplateFileExtension: "tpl.html",
 			Secret:                string(secret),
 			CommentMaxDepth:       5,
+			StoriesPerPage:        30,
+			CommentsPerPage:       100,
 			Session: struct {
 				Name         string
 				StoreFactory func() (sessions.Store, error)

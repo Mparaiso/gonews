@@ -27,32 +27,71 @@ import (
 )
 
 // ThreadIndexController displays a list of links
-func ThreadIndexController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	var threads Threads
-	repository, err := c.GetThreadRepository()
-	if err == nil {
-		threads, err = repository.GetSortedByScore(100, 0)
-		if err == nil {
-			err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_list.tpl.html", map[string]interface{}{
-				"Threads": threads,
-				"Title":   "homepage",
-			})
-			if err == nil {
-				return
-			}
+func StoriesByScoreController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+
+	var (
+		threads Threads
+		query   struct {
+			Page int `schema:"p"`
 		}
+		limit = c.GetStoriesPerPage()
+	)
+
+	err := c.GetFormDecoder().Decode(&query, r.URL.Query())
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	var offset, nextPage = limit * query.Page, query.Page
+
+	threads, err = c.MustGetThreadRepository().GetSortedByScore(limit, offset)
+	if len(threads) == limit {
+		nextPage = query.Page + 1
+	}
+	if err == nil {
+		err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_list.tpl.html", map[string]interface{}{
+			"Threads":  threads,
+			"Title":    "homepage",
+			"NextPage": nextPage,
+			"Page":     query.Page,
+			"Offset":   offset,
+		})
+		if err == nil {
+			return
+		}
+
 	}
 	c.HTTPError(rw, r, 500, err)
 }
 
 // ThreadByHostController displays a list of threads sharing the same host
 func StoriesByDomainController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	host := c.Request().URL.Query().Get("site")
-	threads, err := c.MustGetThreadRepository().GetWhereURLLike("%" + host + "%")
+	var (
+		query struct {
+			Page int `schema:"p"`
+			Site string
+		}
+		limit = c.GetStoriesPerPage()
+	)
+
+	err := c.GetFormDecoder().Decode(&query, r.URL.Query())
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	var offset, nextPage = limit * query.Page, query.Page
+
+	threads, err := c.MustGetThreadRepository().GetWhereURLLike("%"+query.Site+"%", limit, offset)
+	if len(threads) == limit {
+		nextPage = query.Page + 1
+	}
 	if err == nil {
 		err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_list.tpl.html", map[string]interface{}{
-			"Threads": threads,
-			"Title":   "Stories by domain " + host,
+			"Threads":  threads,
+			"Title":    "Stories by domain " + query.Site,
+			"NextPage": nextPage,
+			"Page":     query.Page,
+			"Offset":   offset,
 		})
 	}
 	if err != nil {
@@ -88,24 +127,34 @@ func AuthorCommentsController(c *Container, rw http.ResponseWriter, r *http.Requ
 }
 
 // ThreadListByAuthorIDController displays user's submitted stories
-func AuthorStoriesController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
-	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 32)
+func StoriesByAuthorController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+
+	var (
+		query struct {
+			Page     int   `schema:"p"`
+			AuthorID int64 `schema:"id"`
+		}
+		limit = c.GetStoriesPerPage()
+	)
+	err := c.GetFormDecoder().Decode(&query, r.URL.Query())
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 		return
 	}
+	var offset, nextPage = query.Page * limit, query.Page
+
 	userRepository := c.MustGetUserRepository()
-	user, err := userRepository.GetByID(id)
+	user, err := userRepository.GetByID(query.AuthorID)
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 		return
 	}
 	if user == nil {
-		c.HTTPError(rw, r, http.StatusNotFound, fmt.Sprintf("User with id %d not found", id))
+		c.HTTPError(rw, r, http.StatusNotFound, fmt.Sprintf("User with id %d not found", query.AuthorID))
 		return
 	}
 	threadRepository := c.MustGetThreadRepository()
-	threads, err := threadRepository.GetByAuthorID(user.ID)
+	threads, err := threadRepository.GetByAuthorID(user.ID, limit, offset)
 	if err == sql.ErrNoRows {
 		c.HTTPError(rw, r, http.StatusNotFound, err)
 		return
@@ -113,10 +162,16 @@ func AuthorStoriesController(c *Container, rw http.ResponseWriter, r *http.Reque
 		c.HTTPError(rw, r, http.StatusInternalServerError, err)
 		return
 	}
-	for _, thread := range threads {
-		thread.Author = user
+	if len(threads) == limit {
+		nextPage += 1
 	}
-	err = c.MustGetTemplate().ExecuteTemplate(rw, "user_submitted_stories.tpl.html", map[string]interface{}{"Threads": threads, "Author": user})
+	err = c.MustGetTemplate().ExecuteTemplate(rw, "user_submitted_stories.tpl.html", map[string]interface{}{
+		"Threads":  threads,
+		"Author":   user,
+		"Page":     query.Page,
+		"NextPage": nextPage,
+		"Offset":   offset,
+	})
 	if err != nil {
 		c.HTTPError(rw, r, http.StatusInternalServerError, err)
 	}
@@ -433,12 +488,30 @@ func NewStoriesController(c *Container, rw http.ResponseWriter, r *http.Request,
 	var (
 		stories Threads
 		err     error
+		query   struct {
+			Page int `schema:"p"`
+		}
+		limit = c.GetStoriesPerPage()
 	)
-	stories, err = c.MustGetThreadRepository().GetNewest()
+
+	err = c.GetFormDecoder().Decode(&query, r.URL.Query())
+	if err != nil {
+		c.HTTPError(rw, r, 500, err)
+		return
+	}
+	var offset, nextPage = query.Page * limit, query.Page
+
+	stories, err = c.MustGetThreadRepository().GetNewest(limit, offset)
+	if len(stories) == limit {
+		nextPage += 1
+	}
 	if err == nil {
 		err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_list.tpl.html", map[string]interface{}{
-			"Title":   "New Stories",
-			"Threads": stories,
+			"Title":    "New Stories",
+			"Threads":  stories,
+			"Page":     query.Page,
+			"NextPage": nextPage,
+			"Offset":   offset,
 		})
 	}
 	if err != nil {

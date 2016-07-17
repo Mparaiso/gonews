@@ -22,6 +22,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -30,6 +31,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	gonews "github.com/mparaiso/gonews/core"
 	sqlmigrate "github.com/rubenv/sql-migrate"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Version is the gonews server version
@@ -109,6 +112,20 @@ func main() {
 			return connection, connectionErr
 		}
 		appOptions := gonews.AppOptions{ContainerOptions: containerOptions}
+		// configuration file
+		if startOptions.ConfigurationFilePath != "" {
+			fileBytes, err := ioutil.ReadFile(startOptions.ConfigurationFilePath)
+			if err != nil && startOptions.ConfigurationFilePath != "gonews.yml" {
+				log.Printf("Error loading configuration file %s : %s \n", startOptions.ConfigurationFilePath, err)
+			} else {
+				err = yaml.Unmarshal(fileBytes, &appOptions)
+				if err != nil {
+					log.Fatalf("Error reading configuration file %s : %s \n", startOptions.ConfigurationFilePath, err)
+				} else {
+					log.Printf("Config loaded : %#v", appOptions)
+				}
+			}
+		}
 		app := gonews.GetApp(appOptions)
 		addr := startOptions.Host + ":" + startOptions.Port
 		fmt.Printf("Server Listening On: %s\n", addr)
@@ -133,6 +150,7 @@ func main() {
 func DeclareStartOptions() (*StartOptions, *flag.FlagSet) {
 	startOptions := &StartOptions{}
 	startFlagSet := flag.NewFlagSet("start", flag.ExitOnError)
+	startFlagSet.StringVar(&startOptions.ConfigurationFilePath, "config", "gonews.yml", "Configuration file path")
 	startFlagSet.BoolVar(&startOptions.Debug, "debug", false, "Starts the application in Debug mode.")
 	startFlagSet.BoolVar(&startOptions.LoadFixtures, "loadfixtures", false, "Load sample datas into the database, should obviously be executed only once.")
 	startFlagSet.StringVar(&startOptions.Host, "host", "0.0.0.0", "Host address of the server, example : localhost")
@@ -155,6 +173,7 @@ type StartOptions struct {
 	Host, Port,
 	Env, Driver,
 	DataSource, MigrationPath,
+	ConfigurationFilePath,
 	Secret string
 	LogLevel int
 }
