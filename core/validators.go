@@ -269,7 +269,7 @@ func CSRFValidator(field string, value string, csrfProvider CSRFGenerator, actio
 	}
 }
 func IsURL(candidate string) bool {
-	return regexp.MustCompile(`^(https?\:\/\/)(\w+\.)?\w+\.\w+(\.\w+)?\/?\S+$`).MatchString(candidate)
+	return regexp.MustCompile(`^(https?\:\/\/)(\S+\.)?\S+\.\S+(\.\S+)?\/?\S+$`).MatchString(candidate)
 }
 func isEmail(candidate string) bool {
 	return regexp.MustCompile(`\w+@\w+\.\w+`).MatchString(candidate)

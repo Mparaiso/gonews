@@ -50,6 +50,7 @@ func TestValidatingASubmissionForm(t *testing.T) {
 
 func ExampleIsURL() {
 	for _, url := range []string{
+		"https://active-object./introduction.com",
 		"https://at.baz.co.uk/foo.com/?&bar=booo",
 		"http://baz.com/bar?id=bizz",
 		"http://presentation.opex.com/index.html?foobar=biz#baz",
@@ -69,6 +70,7 @@ func ExampleIsURL() {
 	}
 
 	// Output:
+	// true
 	// true
 	// true
 	// true
