@@ -1,0 +1,5 @@
+# gonews configuration file
+containeroptions:
+    storiesperpage: 10
+    commentsperpage: 30
+    slogan: The Best Technology News Site For Software Engineers
