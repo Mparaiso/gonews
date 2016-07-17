@@ -48,5 +48,9 @@ func (d *DefaultCSRFGenerator) Generate(actionID string) string {
 
 // Valid valides a token
 func (d *DefaultCSRFGenerator) Valid(token, actionID string) bool {
-	return xsrftoken.Valid(token, d.Secret, d.Session.Get(CsrfSessionKey).(string), actionID)
+	id, ok := d.Session.Get(CsrfSessionKey).(string)
+	if !ok {
+		return false
+	}
+	return xsrftoken.Valid(token, d.Secret, id, actionID)
 }
