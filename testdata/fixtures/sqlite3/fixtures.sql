@@ -7,6 +7,7 @@ INSERT INTO users(id,username,email,password) VALUES(2,"janedoe","jane.doe@gonew
 INSERT INTO users(id,username,email,password) VALUES(3,"jackdoe","jack.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
 INSERT INTO users(id,username,email,password) VALUES(4,"jefinerdoe","jenifer.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
 INSERT INTO users(id,username,email,password) VALUES(5,"helenadoe","helena.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
+INSERT INTO users(id,username,email,password) VALUES(6,"robertdoe","robert.doe@gonews.acme","$2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2");
 
 -- threads
 INSERT INTO threads(id,title,url,author_id,created) VALUES(1,"A new computer language","http://computer-language.acme/example.html",1,datetime('now','+1 day'));
@@ -19,6 +20,12 @@ INSERT INTO threads(id,title,url,author_id) VALUES(6,"JetSet, a professional Jav
 INSERT INTO threads(id,title,url,author_id) VALUES(7,"New York: The Silicon Valley of Fooding","https://hipsters.acme/article/3494949",2);
 INSERT INTO threads(id,title,url,author_id) VALUES(8,"Professor Jack Michael: The Secret of Our Success","https://hipsters.acme/article/394491",4);
 INSERT INTO threads(id,title,url,author_id) VALUES(9,"The Difference Between New York, Washington DC, and the Seattle","https://hipsters.acme/article/94844",3);
+INSERT INTO threads(id,title,url,author_id) VALUES(10,"Hip Stack, A web stack of hipsters","https://hipstack.acme/introduction",3);
+INSERT INTO threads(id,title,url,author_id) VALUES(11,"Paris,a framework for building distributed applications in Ermach Language","https://paris-ermach.acme/presentation",2);
+INSERT INTO threads(id,title,url,author_id) VALUES(12,"Nuage acquired by Google","https://nuage.acme/the-future-of-nuage.html",4);
+INSERT INTO threads(id,title,url,author_id) VALUES(13,"SuperMix is now open source","https://supermix.acme/opensource.html",6);
+
+
 
 -- thread_votes
 INSERT INTO thread_votes(thread_id,author_id,score) VALUES(2,3,1);
