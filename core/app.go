@@ -18,13 +18,10 @@
 package gonews
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
 	"path"
-
-	"github.com/gorilla/sessions"
 )
 
 // GetApp returns an application ready to be handled by a server
@@ -73,13 +70,13 @@ func GetApp(appOptions AppOptions) http.Handler {
 	routes := Route{}
 
 	// index
-	app.HandleFunc(routes.StoriesByScore(), Default(NotFoundMiddleware, ThreadIndexController))
+	app.HandleFunc(routes.StoriesByScore(), Default(NotFoundMiddleware, FaviconMiddleware, ThreadIndexController))
 
 	app.HandleFunc(routes.NewComments(), Default(NewCommentsController))
 
 	app.HandleFunc(routes.NewStories(), Default(NewStoriesController))
 
-	app.HandleFunc(routes.Thread(), Default(ThreadShowController))
+	app.HandleFunc(routes.StoryByID(), Default(StoryByIDController))
 
 	app.HandleFunc(routes.Reply(), AuthenticatedUsersOnly(ReplyController))
 
@@ -103,53 +100,6 @@ func GetApp(appOptions AppOptions) http.Handler {
 
 	return app
 }
-
-// DefaultContainerOptions returns the default ContainerOptions
-// A closure is used to generate the function which allows us
-// to have a few global variables ,like the session store or the db
-var DefaultContainerOptions = func() func() ContainerOptions {
-	//secret := securecookie.GenerateRandomKey(64)
-	connection, connectionErr := sql.Open("sqlite3", "db.sqlite3")
-	secret := []byte("some secret key for debugging purposes")
-	sessionCookieStore := sessions.NewCookieStore(secret)
-	sessionCookieStore.Options = &sessions.Options{
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		MaxAge:   60 * 60 * 24,
-		Domain:   "localhost",
-	}
-
-	return func() ContainerOptions {
-		options := ContainerOptions{
-			Debug:                 false,
-			LogLevel:              INFO,
-			Title:                 "gonews",
-			Environment:           "development",
-			Slogan:                "the news site for gophers",
-			Description:           "gonews is a site where gophers publish and discuss news about the go language",
-			DataSource:            "db.sqlite3",
-			Driver:                "sqlite3",
-			TemplateDirectory:     "templates",
-			TemplateFileExtension: "tpl.html",
-			Secret:                string(secret),
-			CommentMaxDepth:       5,
-			Session: struct {
-				Name         string
-				StoreFactory func() (sessions.Store, error)
-			}{
-				Name: "go-news",
-				StoreFactory: func() (sessions.Store, error) {
-					return sessionCookieStore, nil
-				},
-			},
-			ConnectionFactory: func() (*sql.DB, error) {
-				return connection, connectionErr
-			},
-		}
-		return options
-	}
-}()
 
 // GetDefaultStack returns the default middleware stack
 func GetDefaultStack(factory ContainerFactory) *Stack {
@@ -186,7 +136,7 @@ func (Route) NewStories() string { return "/newest" }
 
 // NewComments URI displays comments by age
 func (Route) NewComments() string     { return "/newcomments" }
-func (Route) Thread() string          { return "/item" }
+func (Route) StoryByID() string       { return "/item" }
 func (Route) Reply() string           { return "/reply" }
 func (Route) StoriesByDomain() string { return "/from" }
 func (Route) AuthorComments() string  { return "/threads" }

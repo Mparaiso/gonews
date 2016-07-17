@@ -6,3 +6,4 @@ temp
 cover.out
 db.sqlite3
 vendor
+.env

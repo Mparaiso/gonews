@@ -32,7 +32,7 @@ import (
 	sqlmigrate "github.com/rubenv/sql-migrate"
 )
 
-const version = "0.0.01-alpha"
+var Version = "0.0.1-alpha"
 
 const defaultSecret = "please change this key in production!"
 
@@ -117,7 +117,7 @@ func main() {
 		}
 		return
 	case "version":
-		print(version)
+		print(Version)
 	case "help":
 		printDocumentation()
 	default:

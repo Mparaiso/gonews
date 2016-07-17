@@ -444,7 +444,7 @@ func TestApp_404(t *testing.T) {
 // It should respond with status 200
 // The number of comments on the story page should have increased by one
 
-func Test_Server_Submitting_a_comment(t *testing.T) {
+func TestSubmittingAComment(t *testing.T) {
 
 	// Given a server
 	_, server, _, err := LoginUser(t)
@@ -596,57 +596,34 @@ func TestSubmitStory(t *testing.T) {
 // When a valid comment form is submitted
 // it should respond with status 200
 // it should redirect to initial requested page
-func Test_ReplyingToComment(t *testing.T) {
+func TestReplyingToComment(t *testing.T) {
 	// Given a server
-	db, server, user, err := LoginUser(t)
+	db, server, _, err := LoginUser(t)
 	defer func() {
 		db.Close()
 		server.Close()
 	}()
-	if err != nil {
-		t.Fatal(err)
-	}
-	print(db, server, user, err)
-	defer server.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
+	Expect(t, err, nil)
+	Expect(t, err, nil)
 	threadID := 1
 	res, err := http.Get(fmt.Sprintf("%s/item?id=%d", server.URL, threadID))
-	if err != nil {
-		t.Fatal(err)
-	}
+	Expect(t, err, nil)
 	defer res.Body.Close()
-	if want, got := 200, res.StatusCode; want != got {
-		t.Fatalf("status : want '%v' got '%v' ", want, got)
-	}
+	Expect(t, res.StatusCode, 200, "status")
 	doc, err := goquery.NewDocumentFromResponse(res)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	Expect(t, err, nil)
 	href, ok := doc.Find(".comment-reply").First().Attr("href")
-	if !ok {
-		t.Fatalf("first .comment-reply href not found")
-	}
+	Expect(t, ok, true, "first .comment-reply href not found")
 	// When an authenticated user requests the "reply to comment" page /reply?id=XXX&goto=/item?id=XXXX
 	res, err = http.Get(server.URL + href)
-	if err != nil {
-		t.Fatal(err)
-	}
+	Expect(t, err, nil)
 	defer res.Body.Close()
 	// it should respond with status 200
-	if want, got := 200, res.StatusCode; want != got {
-		t.Fatalf("status : want '%v' got '%v' ", want, got)
-	}
+	Expect(t, res.StatusCode, 200, "status")
 	doc, err = goquery.NewDocumentFromResponse(res)
-	if err != nil {
-		t.Fatal(err)
-	}
+	Expect(t, err, nil)
 	csrf, ok := doc.Find("input[name='comment_csrf']").First().Attr("value")
-	if !ok {
-		t.Fatalf("first input[name='comment_csrf'] value not found")
-	}
+	Expect(t, ok, true, "first input[name='comment_csrf'] value not found")
 	parentID, ok := doc.Find("input[name='comment_parent_id']").First().Attr("value")
 	if !ok {
 		t.Fatalf("first input[name='comment_parent_id'] value not found")
@@ -673,19 +650,16 @@ func Test_ReplyingToComment(t *testing.T) {
 	}
 	// When a valid comment form is submitted
 	res, err = http.Post(server.URL+action, "application/x-www-form-urlencoded", strings.NewReader(formValues.Encode()))
-	if err != nil {
-		t.Fatal(err)
-	}
+	Expect(t, err, nil)
 	defer res.Body.Close()
 	// it should respond with status 200
-	if want, got := 200, res.StatusCode; want != got {
-		t.Fatalf("status : want '%v' got '%v' ", want, got)
-	}
-
+	Expect(t, res.StatusCode, 200, "status")
+	row := db.QueryRow("SELECT ID from comments_view ORDER BY Created DESC,ID DESC LIMIT 1")
+	var id int
+	err = row.Scan(&id)
+	Expect(t, err, nil, "row scan")
 	// it should redirect to initial requested page
-	if want, got := Goto, res.Request.URL.RequestURI()+"#"+res.Request.URL.Fragment; want != got {
-		t.Fatalf("location : want '%v' got '%v' ", want, got)
-	}
+	Expect(t, res.Request.URL.RequestURI()+"#"+res.Request.URL.Fragment, fmt.Sprintf("%s#%d", Goto, id), "location")
 }
 
 // Scenario: REQUESTING NEW COMMENTS PAGE

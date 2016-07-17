@@ -32,31 +32,6 @@ import (
 // Any is any value
 type Any interface{}
 
-// ContainerOptions are options provided to the container
-type ContainerOptions struct {
-	Environment,
-	DataSource,
-	Driver,
-	Secret,
-	Title,
-	Slogan,
-	Description,
-	TemplateDirectory,
-	TemplateFileExtension string
-	Debug bool
-	LogLevel
-	// Maximum Depth of a comment thread
-	CommentMaxDepth int
-	Session         struct {
-		Name         string
-		StoreFactory func() (sessions.Store, error)
-	}
-	ConnectionFactory func() (*sql.DB, error)
-	LoggerFactory     func() (LoggerInterface, error)
-	csrfGenerator     CSRFGenerator
-	user              *User
-}
-
 // Container contains all the application dependencies
 type Container struct {
 	ContainerOptions  ContainerOptions
@@ -282,3 +257,75 @@ func (c *Container) GetSessionStore() (sessions.Store, error) {
 	}
 	return c.sessionStore, nil
 }
+
+// ContainerOptions are options provided to the container
+type ContainerOptions struct {
+	Environment,
+	DataSource,
+	Driver,
+	Secret,
+	Title,
+	Slogan,
+	Description,
+	TemplateDirectory,
+	TemplateFileExtension string
+	Debug bool
+	LogLevel
+	// Maximum Depth of a comment thread
+	CommentMaxDepth int
+	Session         struct {
+		Name         string
+		StoreFactory func() (sessions.Store, error)
+	}
+	ConnectionFactory func() (*sql.DB, error)
+	LoggerFactory     func() (LoggerInterface, error)
+	csrfGenerator     CSRFGenerator
+	user              *User
+}
+
+// DefaultContainerOptions returns the default ContainerOptions
+// A closure is used to generate the function which allows us
+// to have a few global variables ,like the session store or the db
+var DefaultContainerOptions = func() func() ContainerOptions {
+	//secret := securecookie.GenerateRandomKey(64)
+	connection, connectionErr := sql.Open("sqlite3", "db.sqlite3")
+	secret := []byte("some secret key for debugging purposes")
+	sessionCookieStore := sessions.NewCookieStore(secret)
+	sessionCookieStore.Options = &sessions.Options{
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		MaxAge:   60 * 60 * 24,
+		Domain:   "localhost",
+	}
+
+	return func() ContainerOptions {
+		options := ContainerOptions{
+			Debug:                 false,
+			LogLevel:              INFO,
+			Title:                 "gonews",
+			Environment:           "development",
+			Slogan:                "the news site for gophers",
+			Description:           "gonews is a site where gophers publish and discuss news about the go language",
+			DataSource:            "db.sqlite3",
+			Driver:                "sqlite3",
+			TemplateDirectory:     "templates",
+			TemplateFileExtension: "tpl.html",
+			Secret:                string(secret),
+			CommentMaxDepth:       5,
+			Session: struct {
+				Name         string
+				StoreFactory func() (sessions.Store, error)
+			}{
+				Name: "go-news",
+				StoreFactory: func() (sessions.Store, error) {
+					return sessionCookieStore, nil
+				},
+			},
+			ConnectionFactory: func() (*sql.DB, error) {
+				return connection, connectionErr
+			},
+		}
+		return options
+	}
+}()

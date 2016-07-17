@@ -115,7 +115,7 @@ func GetContainerOptions(db *sql.DB) gonews.ContainerOptions {
 	options.ConnectionFactory = func() (*sql.DB, error) {
 		return db, nil
 	}
-	options.LogLevel = gonews.OFF
+	options.LogLevel = gonews.INFO
 	return options
 }
 

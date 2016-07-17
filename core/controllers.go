@@ -122,15 +122,15 @@ func AuthorStoriesController(c *Container, rw http.ResponseWriter, r *http.Reque
 	}
 }
 
-// ThreadShowController displays a thread and its comments
-func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+// StoryByIDController displays a thread and its comments
+func StoryByIDController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 0)
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 		return
 	}
 
-	thread, err := c.MustGetThreadRepository().GetThreadByIDWithCommentsAndTheirAuthors(int(id))
+	thread, err := c.MustGetThreadRepository().GetByIDWithComments(int(id))
 	if err != nil {
 		c.HTTPError(rw, r, 500, err)
 		return
@@ -143,7 +143,7 @@ func ThreadShowController(c *Container, rw http.ResponseWriter, r *http.Request,
 	if c.HasAuthenticatedUser() {
 		comment.AuthorID = c.CurrentUser().ID
 	}
-	commentForm := &CommentForm{Goto: fmt.Sprintf("/item?id=%d", id)}
+	commentForm := &CommentForm{Goto: fmt.Sprintf("/item?id=%d", id), CSRF: c.MustGetCSRFGenerator().Generate("comment")}
 	commentForm.SetModel(comment)
 	err = c.MustGetTemplate().ExecuteTemplate(rw, "thread_show.tpl.html", map[string]interface{}{
 		"Thread":      thread,
@@ -337,7 +337,7 @@ func SubmitStoryController(c *Container, rw http.ResponseWriter, r *http.Request
 
 }
 
-// CommentCreateController handles comment submission
+// ReplyController handles comment submission
 func ReplyController(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
 	switch r.Method {
 	case "GET":
@@ -349,6 +349,7 @@ func ReplyController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		q := new(Query)
 		err := decoder.Decode(q, r.URL.Query()) /// TODO find out why the following doesn't work c.GetFormDecoder().Decode(&q, r.URL.Query())
 		if err != nil {
+
 			c.HTTPError(rw, r, http.StatusBadRequest, err)
 			return
 		}
@@ -375,7 +376,8 @@ func ReplyController(c *Container, rw http.ResponseWriter, r *http.Request, next
 		}
 		return
 	case "POST":
-		form := &CommentForm{CSRF: c.MustGetCSRFGenerator().Generate("comment")}
+		fmt.Println("Processing comment form")
+		form := &CommentForm{}
 		form.SetModel(&Comment{AuthorID: c.CurrentUser().ID})
 		err := form.HandleRequest(r)
 		if err != nil {
@@ -389,14 +391,15 @@ func ReplyController(c *Container, rw http.ResponseWriter, r *http.Request, next
 			err = c.MustGetCommentRepository().Create(comment)
 			if err == nil {
 				c.MustGetSession().AddFlash("Comment sucessfully created.", "success")
-				c.HTTPRedirect(form.Goto, 302)
+				c.HTTPRedirect(fmt.Sprintf("%s#%d", form.Goto, comment.ID), 302)
 				return
 			}
 		}
+		c.MustGetLogger().Error(err)
 		c.ResponseWriter().WriteHeader(http.StatusBadRequest)
-		err = c.MustGetTemplate().ExecuteTemplate(rw, "comment_form.tpl.html", map[string]interface{}{
+		err = c.MustGetTemplate().ExecuteTemplate(rw, "comment_create.tpl.html", map[string]interface{}{
 			"CommentForm": form,
-			"Title":       "CommentForm",
+			"Title":       "Submit a comment",
 			"Error":       "Your form has errors",
 		})
 		if err != nil {

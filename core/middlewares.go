@@ -169,3 +169,12 @@ func NotFoundMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, n
 		next()
 	}
 }
+
+// FaviconMiddleware returns an empty response when favicon.ico requested
+func FaviconMiddleware(c *Container, rw http.ResponseWriter, r *http.Request, next func()) {
+	if r.URL.Path == "/favicon.ico" {
+		rw.Write([]byte{0})
+		return
+	}
+	next()
+}

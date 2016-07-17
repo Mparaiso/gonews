@@ -25,17 +25,28 @@ func TestThreadRepository_GetByAuthorID(t *testing.T) {
 
 	threadRepository := &gonews.ThreadRepository{DB: db, Logger: gonews.NewDefaultLogger(gonews.OFF)}
 	threads, err := threadRepository.GetByAuthorID(1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if expected, got := 2, len(threads); expected != got {
-		t.Fatalf("threads length: expected '%v' , got '%v'", expected, got)
-	}
-	// t.Logf("%#v %#v", threads[0], threads[1])
-	if expected, got := int64(1), threads[0].ID; expected != got {
-		t.Fatalf("threads[0].ID : expected '%v' , got '%v' ", expected, got)
-	}
-	if expected, got := int64(1), threads[0].AuthorID; expected != got {
-		t.Fatalf("threads[0].AuthorID: expected '%v' , got '%v'", expected, got)
-	}
+	Expect(t, err, nil)
+	Expect(t, len(threads), 2, "len(threads)")
+	Expect(t, threads[0].ID, int64(1), "threads[0].ID")
+	Expect(t, threads[0].AuthorID, int64(1), "threads[0].AuthorID")
+}
+
+func TestThreadRepository_GetByIDWithComments(t *testing.T) {
+	db := LoadFixtures(MigrateUp(GetDB(t), t), t)
+	threadRepository := &gonews.ThreadRepository{DB: db, Logger: gonews.NewDefaultLogger(gonews.OFF)}
+	thread, err := threadRepository.GetByIDWithComments(1)
+	Expect(t, err, nil)
+	Expect(t, thread.AuthorID, int64(1), "thread.AuthorID")
+}
+
+func TestCommentRepository_GetCommentsByAuthorID(t *testing.T) {
+	db := LoadFixtures(MigrateUp(GetDB(t), t), t)
+	count, authorId := 0, 1
+	row := db.QueryRow("SELECT COUNT(ID) FROM comments_view WHERE AuthorID = ? ", int64(authorId))
+	err := row.Scan(&count)
+	Expect(t, err, nil)
+	commentRepository := &gonews.CommentRepository{DB: db, Logger: gonews.NewDefaultLogger(gonews.OFF)}
+	comments, err := commentRepository.GetCommentsByAuthorID(int64(authorId))
+	Expect(t, err, nil)
+	Expect(t, len(comments), count, "comments count")
 }

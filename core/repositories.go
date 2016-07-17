@@ -57,7 +57,8 @@ func (repository *UserRepository) Save(u *User) error {
 
 // GetOneByEmail gets one user by his email
 func (repository *UserRepository) GetOneByEmail(email string) (user *User, err error) {
-	query := `SELECT u.id,
+	query :=
+		`SELECT u.id,
   	u.username,
 	u.password,
 	u.email,
@@ -190,13 +191,7 @@ func (repository ThreadRepository) Create(thread *Thread) error {
 
 	if err == nil {
 		thread.ID, err = result.LastInsertId()
-		// The following part is handled automatically by the DB with a TRIGGER
-		// so it is commented for now
-		// if err == nil {
-
-		// 	threadVoteRepository := &ThreadVoteRepository{t.DB, t.Logger}
-		// 	_, err = threadVoteRepository.Create(&ThreadVote{AuthorID: thread.AuthorID, ThreadID: thread.ID, Score: 1})
-		// }
+		// a new thread_votes record is then automatically inserted in the db with a TRIGGER
 	}
 
 	return err
@@ -240,63 +235,32 @@ func (repository ThreadRepository) GetByAuthorID(id int64) (threads Threads, err
 }
 
 // GetThreadByIDWithCommentsAndTheirAuthors gets a threas with its comments
-func (repository ThreadRepository) GetThreadByIDWithCommentsAndTheirAuthors(id int) (thread *Thread, err error) {
+func (repository ThreadRepository) GetByIDWithComments(id int) (thread *Thread, err error) {
 	// Thread
 	query := `
-	SELECT threads.id AS ID,
-	threads.title AS Title,threads.url AS URL, threads.created AS Created , 
-	COUNT(comments.id) AS CommentCount,
-	threads.author_id AS AuthorID 
-	FROM threads 
-	LEFT JOIN comments ON comments.thread_id = threads.id
-	WHERE threads.id = ? 
-	GROUP BY threads.id;`
+	SELECT 
+		ID,Title,Created,URL,CommentCount,Score,AuthorID,AuthorName 
+	FROM 
+		threads_view t
+	WHERE 
+		t.ID  = ? `
 	repository.Logger.Debug(query, id)
 	row := repository.DB.QueryRow(query, id)
 	thread = new(Thread)
-	err = MapRowToStruct([]string{"ID", "Title", "URL", "Created",
-		"CommentCount", "AuthorID"}, row, thread, true)
+	err = MapRowToStruct([]string{"ID", "Title", "Created", "URL",
+		"CommentCount", "Score", "AuthorID", "AuthorName"}, row, thread, true)
 	if err == sql.ErrNoRows {
 		return nil, nil
-	} else if err != nil {
-		return nil, err
 	}
-
-	// Author
-	query2 := `SELECT users.id AS ID,users.username AS Username
-	FROM users WHERE users.id = ? ;
-	`
-	repository.Logger.Debug(query2, thread.AuthorID)
-	row = repository.DB.QueryRow(query2, thread.AuthorID)
-	author := new(User)
-	err = MapRowToStruct([]string{"ID", "Username"}, row, author, true)
 	if err != nil {
 		return nil, err
 	}
-	// Comments
-	thread.Author = author
+
 	query3 := `
-		SELECT c.id AS ID,
-			c.content AS Content,
-			c.author_id AS AuthorID,
-			u.username AS AuthorName,
-			c.created AS Created,
-			c.thread_id AS ThreadID,
-			c.parent_id AS ParentID,
-			COUNT(cv.score) AS CommentScore,
-			t.Title AS ThreadTitle
-		FROM comments c
-			JOIN
-			users u ON u.id = c.author_id
-			JOIN
-			threads t ON t.id = c.thread_id
-			LEFT JOIN
-			comment_votes cv ON cv.comment_id = c.id
-		WHERE c.thread_id = ?
-		GROUP BY c.id
-		ORDER BY CommentScore DESC,
-				Created DESC;
-				`
+		SELECT * FROM comments_view c
+		WHERE c.ThreadID = ?
+		GROUP BY c.ID
+		ORDER BY c.CommentScore DESC, c.Created DESC;`
 	repository.Logger.Debug(query3, id)
 	rows, err := repository.DB.Query(query3, id)
 	if err != nil && err != sql.ErrNoRows {
@@ -304,9 +268,6 @@ func (repository ThreadRepository) GetThreadByIDWithCommentsAndTheirAuthors(id i
 	}
 
 	err = MapRowsToSliceOfStruct(rows, &thread.Comments, true)
-	if err != nil {
-		return nil, err
-	}
 
 	return
 }
@@ -351,24 +312,14 @@ type CommentRepository struct {
 
 // GetNewestComments returns comments sorted by date of creation
 func (repository *CommentRepository) GetNewestComments() (comments Comments, err error) {
-	query := `SELECT 
-			c.id AS ID,
-			c.parent_id AS ParentID,
-			c.thread_id AS ThreadID,
-			c.author_id AS AuthorID,
-			c.content AS Content,
-			c.created AS Created,
-			c.updated AS Updated,
-			coalesce(SUM(comment_votes.score),0) AS Score,
-			u.username AS AuthorName,
-			t.Title AS ThreatTitle
-		FROM comments c 
-		JOIN threads t ON t.id = c.thread_id
-		JOIN users u ON u.id = c.author_id
-		LEFT JOIN comment_votes ON comment_votes.comment_id = c.id
-		WHERE c.author_id = u.id
-		GROUP BY c.id
-		ORDER BY c.created DESC;`
+	query := `
+	SELECT 
+		* 
+	FROM 
+		comments_view  c
+	ORDER BY 
+		c.Created DESC;`
+
 	repository.Logger.Debug(query)
 	var (
 		rows *sql.Rows
@@ -388,28 +339,27 @@ func (repository *CommentRepository) GetNewestComments() (comments Comments, err
 func (repository *CommentRepository) GetByID(id int64) (comment *Comment, err error) {
 	query := `
 	SELECT  
-		comments.id AS ID,
-		comments.parent_id AS ParentID,
-		comments.thread_id AS ThreadID,
-		comments.author_id AS AuthorID,
-		comments.content AS Content,
-		comments.created AS Created,
-		comments.updated AS Updated,
-		coalesce(SUM(comment_votes.score),0) AS Score,
-		users.username AS AuthorName 
+		ID,
+		ParentID,
+		ThreadID,
+		ThreadTitle,
+		AuthorID,
+		Content,
+		Created,
+		Updated,
+		CommentScore,
+		AuthorName 
 	FROM 
-		comments, users
-	LEFT JOIN 
-		comment_votes ON comment_votes.comment_id = comments.id
+		comments_view c
 	WHERE 
-		comments.id == ? 
-		AND comments.author_id = users.id
-	GROUP BY comments.id 
+		c.ID == ? 
 	LIMIT 1 ;`
 	repository.Logger.Debug(query, id)
 	row := repository.DB.QueryRow(query, id)
 	comment = new(Comment)
-	err = MapRowToStruct([]string{"ID", "ParentID", "ThreadID", "AuthorID", "Content", "Created", "Updated", "Score", "AuthorName"}, row, comment, true)
+	err = MapRowToStruct([]string{"ID", "ParentID", "ThreadID",
+		"ThreadTitle", "AuthorID", "Content", "Created", "Updated",
+		"CommentScore", "AuthorName"}, row, comment, true)
 	switch err {
 	case sql.ErrNoRows:
 		return nil, nil
@@ -439,30 +389,26 @@ func (repository *CommentRepository) GetCommentsByAuthorID(id int64) (comments C
 	var (
 		rows *sql.Rows
 	)
-	query := `SELECT c.id AS ID,
-				c.parent_id AS ParentID,
-				c.author_id AS AuthorID,
-				u.username AS AuthorName,
-				c.thread_id AS ThreadID,
-				c.content AS Content,
-				c.created AS Created,
-				c.updated AS Updated,
-				coalesce(SUM(cv.score),0) AS CommentScore
-			FROM comments c
-				JOIN users u ON  c.author_id = u.id
-				LEFT JOIN
-				comment_votes cv ON cv.comment_id = c.id
-			WHERE c.author_id = ? 
-				
-			GROUP BY c.id
-			ORDER BY c.created DESC;`
+	query := `SELECT 
+				ID,
+				ParentID,
+				AuthorID,
+				AuthorName,
+				ThreadID,
+				Content,
+				Created,
+				Updated,
+				CommentScore
+			FROM 
+				comments_view c
+			WHERE 
+				c.AuthorID = ? 
+			ORDER BY 
+				c.Created DESC;`
 	repository.Logger.Debug(query, id)
 	rows, err = repository.DB.Query(query, id)
 	if err == nil {
 		err = MapRowsToSliceOfStruct(rows, &comments, true)
-		if err == nil {
-			return
-		}
 	}
 	return
 }
