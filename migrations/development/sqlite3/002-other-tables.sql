@@ -36,7 +36,7 @@ CREATE TABLE comments(
 
 CREATE TABLE comment_votes(
        id integer primary key autoincrement,
-       comment_id integer not null references comments(id),
+       comment_id integer not null references comments(id) ON DELETE CASCADE ,
        author_id integer not null references users(id),
        score integer not null default(0),
        created timestamp not null default(datetime('now')),
@@ -54,6 +54,7 @@ CREATE TABLE thread_votes(
 );
 
 CREATE UNIQUE INDEX thread_votes_index ON thread_votes(thread_id,author_id);
+CREATE UNIQUE INDEX comment_votes_index ON comment_votes(comment_id,author_id);
 
 -- +migrate StatementBegin
 

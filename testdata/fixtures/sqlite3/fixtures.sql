@@ -29,10 +29,9 @@ INSERT INTO thread_votes(thread_id,author_id,score) VALUES(1,4,1);
 INSERT INTO thread_votes(thread_id,author_id,score) VALUES(4,2,1);
 
 -- comment_votes
-INSERT INTO comment_votes(id,comment_id,author_id,score) VALUES(1,1,2,1);
+
 INSERT INTO comment_votes(id,comment_id,author_id,score) VALUES(2,1,3,1);
 INSERT INTO comment_votes(id,comment_id,author_id,score) VALUES(3,1,4,1);
-INSERT INTO comment_votes(id,comment_id,author_id,score) VALUES(4,2,1,1);
 INSERT INTO comment_votes(id,comment_id,author_id,score) VALUES(5,2,3,1);
 INSERT INTO comment_votes(id,comment_id,author_id,score) VALUES(6,2,4,-1);
 
