@@ -43,7 +43,7 @@ Roadmap
 - [x] YAML configuration
 - [x] sqlite support
 - [ ] mysql support
-- [ ] postgre support
+- [ ] postgresql support
 
 #### Getting Started
 
