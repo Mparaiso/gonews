@@ -1,1 +1,1 @@
-web: gonews start -port $PORT -migrate -loadfixtures -loglevel=2 -debug $DEBUG
+web: gonews start -port $PORT -migrate -loadfixtures 
