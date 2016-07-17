@@ -81,6 +81,7 @@ type RegistrationForm struct {
 	Errors               map[string][]string
 }
 
+// Model returns the underlying model
 func (form *RegistrationForm) Model() *User {
 	return &User{
 		Username: form.Username,
@@ -143,6 +144,7 @@ func (form *SubmissionForm) HandleRequest(r *http.Request) error {
 	return decoder.Decode(form, r.PostForm)
 }
 
+// SetModel sets the form model
 func (form *SubmissionForm) SetModel(thread *Thread) {
 	form.model = thread
 	form.Content = thread.Content

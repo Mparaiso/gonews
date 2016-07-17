@@ -36,14 +36,14 @@ type TemplateEnvironment struct {
 	Session       map[string]interface{}
 }
 
-// TemplateProvider provides templates
+// TemplateEngine provides templates
 type TemplateEngine interface {
 	ExecuteTemplate(io.Writer, string, interface{}) error
 	Environment() Any
 	SetEnvironment(Any)
 }
 
-// Template implement template provider
+// DefaultTemplateEngine implement template provider
 type DefaultTemplateEngine struct {
 	*template.Template
 	environment Any

@@ -32,6 +32,7 @@ import (
 	sqlmigrate "github.com/rubenv/sql-migrate"
 )
 
+// Version is the gonews server version
 var Version = "0.0.1-alpha"
 
 const defaultSecret = "please change this key in production!"

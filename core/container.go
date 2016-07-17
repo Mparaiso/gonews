@@ -56,10 +56,12 @@ type Container struct {
 	user *User
 }
 
+// Debug returns true if debug mode
 func (c Container) Debug() bool {
 	return c.ContainerOptions.Debug
 }
 
+// SetDebug sets debug mode
 func (c *Container) SetDebug(debug bool) {
 	c.ContainerOptions.Debug = debug
 }
