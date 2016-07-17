@@ -5,6 +5,10 @@ Gonews
 
 author: mparaiso <mparaiso@online.fr>
 
+#### Demonstration 
+
+[gonews.herokuapp.com](https://gonews.herokuapp.com)
+
 license: GNU AGPLv3
 
 Gonews, a hacker news clone written in Go
@@ -20,7 +24,7 @@ Roadmap
 
 - [ ] Documentation
 - [x] Creating Accounts
-- [ ] User profile
+- [x] User profile
 - [x] Login, Logout
 - [x] Adding Comments
 - [ ] Updating comments
