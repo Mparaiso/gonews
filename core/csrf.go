@@ -39,7 +39,7 @@ type DefaultCSRFGenerator struct {
 
 // Generate generates a new token
 func (d *DefaultCSRFGenerator) Generate(actionID string) string {
-	if !d.Session.Has(CsrfSessionKey) {
+	if _, ok := d.Session.Get(CsrfSessionKey).(string); !d.Session.Has(CsrfSessionKey) || !ok {
 		d.Session.Set(CsrfSessionKey, string(securecookie.GenerateRandomKey(16)))
 	}
 	t := xsrftoken.Generate(d.Secret, d.Session.Get(CsrfSessionKey).(string), actionID)
@@ -48,9 +48,9 @@ func (d *DefaultCSRFGenerator) Generate(actionID string) string {
 
 // Valid valides a token
 func (d *DefaultCSRFGenerator) Valid(token, actionID string) bool {
-	id, ok := d.Session.Get(CsrfSessionKey).(string)
+	userUniqueId, ok := d.Session.Get(CsrfSessionKey).(string)
 	if !ok {
 		return false
 	}
-	return xsrftoken.Valid(token, d.Secret, id, actionID)
+	return xsrftoken.Valid(token, d.Secret, userUniqueId, actionID)
 }
