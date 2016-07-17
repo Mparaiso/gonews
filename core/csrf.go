@@ -19,6 +19,8 @@ package gonews
 
 import (
 	// "fmt"
+	"encoding/base64"
+
 	"github.com/gorilla/securecookie"
 	"golang.org/x/net/xsrftoken"
 )
@@ -40,7 +42,7 @@ type DefaultCSRFGenerator struct {
 // Generate generates a new token
 func (d *DefaultCSRFGenerator) Generate(actionID string) string {
 	if _, ok := d.Session.Get(CsrfSessionKey).(string); !d.Session.Has(CsrfSessionKey) || !ok {
-		d.Session.Set(CsrfSessionKey, string(securecookie.GenerateRandomKey(16)))
+		d.Session.Set(CsrfSessionKey, base64.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(16)))
 	}
 	t := xsrftoken.Generate(d.Secret, d.Session.Get(CsrfSessionKey).(string), actionID)
 	return t
