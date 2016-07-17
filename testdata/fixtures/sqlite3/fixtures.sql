@@ -1,4 +1,3 @@
--- +migrate Up
 -- password: $2y$05$yK291Unwid3erFGGlV29P.zmxUzwZLFXIgbflEmoRkxJGovE4OmW2
 
 -- users
@@ -51,9 +50,3 @@ INSERT INTO comments(id,thread_id,author_id,content,parent_id) VALUES(9,5,5,"It 
 INSERT INTO comments(id,thread_id,author_id,content,parent_id) VALUES(10,5,5,"GPL-3.0 for non commercial use, there is also a commercial license.",8);
 INSERT INTO comments(id,thread_id,author_id,content,parent_id) VALUES(11,5,4,"Nice thank you",10);
 
--- +migrate Down
-DELETE FROM threads;
-DELETE FROM comments;
-DELETE FROM comment_votes;
-DELETE FROM thread_votes;
-DELETE FROM users;

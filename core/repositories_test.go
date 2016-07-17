@@ -21,7 +21,8 @@ import "testing"
 import gonews "github.com/mparaiso/gonews/core"
 
 func TestThreadRepository_GetByAuthorID(t *testing.T) {
-	db := MigrateUp(GetDB(t), t)
+	db := LoadFixtures(MigrateUp(GetDB(t), t), t)
+
 	threadRepository := &gonews.ThreadRepository{DB: db, Logger: gonews.NewDefaultLogger(gonews.OFF)}
 	threads, err := threadRepository.GetByAuthorID(1)
 	if err != nil {

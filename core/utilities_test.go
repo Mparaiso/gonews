@@ -18,6 +18,7 @@
 package gonews_test
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"log"
@@ -48,15 +49,7 @@ import (
 // DEBUG will allows the test to output additional informations
 var DEBUG = false
 
-// Allows arguments to be passed to test
-// ex: go test -args -debug
-func TestMain(m *testing.M) {
-	debug := flag.Bool("debug", DEBUG, "debug the test suite")
-
-	flag.Parse()
-	DEBUG = *debug
-	os.Exit(m.Run())
-}
+var DRIVER = "sqlite3"
 
 // Directory is the current directory
 var Directory = func() string {
@@ -67,9 +60,20 @@ var Directory = func() string {
 	return dir
 }()
 
+// Allows arguments to be passed to test
+// ex: go test -args -debug
+func TestMain(m *testing.M) {
+	debug := flag.Bool("debug", DEBUG, "debug the test suite")
+	driver := flag.String("driver", DRIVER, "database driver")
+	flag.Parse()
+	DEBUG = *debug
+	DRIVER = *driver
+	os.Exit(m.Run())
+}
+
 // GetDB gets the db connection
 func GetDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open(DRIVER, ":memory:")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +82,25 @@ func GetDB(t *testing.T) *sql.DB {
 
 // MigrateUp executes db migrations
 func MigrateUp(db *sql.DB, t *testing.T) *sql.DB {
-	_, err := migrate.Exec(db, "sqlite3", migrate.FileMigrationSource{"./../migrations/development/sqlite3"}, migrate.Up)
+	_, err := migrate.Exec(db, DRIVER, migrate.FileMigrationSource{"./../migrations/development/" + DRIVER}, migrate.Up)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return db
+}
+
+// LoadFixtures loads test fixtures
+func LoadFixtures(db *sql.DB, t *testing.T) *sql.DB {
+	migrationFile, err := os.Open("./../testdata/fixtures/" + DRIVER + "/fixtures.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	buffer := new(bytes.Buffer)
+	_, err = buffer.ReadFrom(migrationFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Exec(buffer.String())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,6 +129,7 @@ func GetServer(t *testing.T, dbs ...*sql.DB) *httptest.Server {
 		db = dbs[0]
 	}
 	MigrateUp(db, t)
+	LoadFixtures(db, t)
 	app := gonews.GetApp(gonews.AppOptions{ContainerOptions: GetContainerOptions(db)})
 	server := httptest.NewServer(app)
 

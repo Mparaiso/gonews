@@ -1,0 +1,92 @@
+[
+    {
+        "url": "http://computer-language.acme/example.html",
+        "content": null,
+        "created": "2015-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 1,
+        "title": "A new computer language",
+        "id": 1
+    },
+    {
+        "url": "http://mvc.acme/introduction",
+        "content": null,
+        "created": "2016-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 2,
+        "title": "The Acme MVC framework",
+        "id": 2
+    },
+    {
+        "url": "http://furtif.acme/blog?id=10",
+        "content": null,
+        "created": "2016-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 3,
+        "title": "Furtif, A Scalabe Blockchain Database",
+        "id": 3
+    },
+    {
+        "url": "http://blog.kana.acme/tutorials/parsing-pdf-in-joom",
+        "content": null,
+        "created": "2016-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 4,
+        "title": "Parsing PDF in Joom with Kana",
+        "id": 4
+    },
+    {
+        "url": "http://querify.acme/documentation/#querify",
+        "content": null,
+        "created": "2016-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 5,
+        "title": "Querify \u2013 An open-source Query Language",
+        "id": 5
+    },
+    {
+        "url": "http://jetset-ide.acme/presendation.html",
+        "content": null,
+        "created": "2016-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 1,
+        "title": "JetSet, a professional Javascript and Typescript IDE",
+        "id": 6
+    },
+    {
+        "url": "https://hipsters.acme/article/3494949",
+        "content": null,
+        "created": "2016-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 2,
+        "title": "New York: The Silicon Valley of Fooding",
+        "id": 7
+    },
+    {
+        "url": "https://hipsters.acme/article/394491",
+        "content": null,
+        "created": "2016-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 4,
+        "title": "Professor Jack Michael: The Secret of Our Success",
+        "id": 8
+    },
+    {
+        "url": "https://hipsters.acme/article/94844",
+        "content": null,
+        "created": "2016-07-12 04:14:41",
+        "updated": "2016-07-12 04:14:41",
+        "author_id": 3,
+        "title": "The Difference Between New York, Washington DC, and the Seattle",
+        "id": 9
+    },
+    {
+        "url": "http://hipster.acme/no-server-kit",
+        "content": "",
+        "created": "2016-07-16 23:18:16",
+        "updated": "2016-07-16 23:18:16",
+        "author_id": 1,
+        "title": "NoServer Kit \u2013 Free React/Angular UI Kit Based on Minimal Design ",
+        "id": 10
+    }
+]
