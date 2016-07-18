@@ -5,6 +5,9 @@ Gonews
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/Mparaiso/gonews)](https://goreportcard.com/report/github.com/Mparaiso/gonews)
 
+[![codecov](https://codecov.io/gh/Mparaiso/gonews/branch/master/graph/badge.svg)](https://codecov.io/gh/Mparaiso/gonews)
+
+
 author: mparaiso <mparaiso@online.fr>
 
 #### Demonstration 
