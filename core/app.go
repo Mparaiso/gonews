@@ -147,3 +147,4 @@ func (Route) Public() string          { return "/public/" }
 func (Route) Logout() string          { return "/logout" }
 func (Route) UserProfile() string     { return "/user" }
 func (Route) SubmitStory() string     { return "/submit" }
+func (Route) CastStoryVote() string   { return "/vote/item" }

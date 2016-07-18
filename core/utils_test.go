@@ -51,6 +51,8 @@ var DEBUG = false
 
 var DRIVER = "sqlite3"
 
+var FORM_MIME_TYPE = "application/x-www-form-urlencoded"
+
 // Directory is the current directory
 var Directory = func() string {
 	dir, err := os.Getwd()
@@ -115,7 +117,7 @@ func GetContainerOptions(db *sql.DB) gonews.ContainerOptions {
 	options.ConnectionFactory = func() (*sql.DB, error) {
 		return db, nil
 	}
-	options.LogLevel = gonews.INFO
+	options.LogLevel = gonews.OFF
 	return options
 }
 
@@ -137,6 +139,7 @@ func GetServer(t *testing.T, dbs ...*sql.DB) *httptest.Server {
 	logger.SetOutput(os.Stdout)
 	server.Config.ErrorLog = logger
 	server.Config.WriteTimeout = 3 * time.Second
+	http.DefaultClient.Jar = nil
 	return server
 }
 
