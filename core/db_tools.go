@@ -1,17 +1,17 @@
 //    Gonews is a webapp that provides a forum where users can post and discuss links
 //
 //    Copyright (C) 2016  mparaiso <mparaiso@online.fr>
-
+//
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU Affero General Public License as published
 //    by the Free Software Foundation, either version 3 of the License, or
 //    (at your option) any later version.
-
+//
 //    This program is distributed in the hope that it will be useful,
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of
 //    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //    GNU Affero General Public License for more details.
-
+//
 //    You should have received a copy of the GNU Affero General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -109,6 +109,7 @@ func MapRowsToSliceOfMaps(scanner RowsScanner, Map *[]map[string]interface{}) er
 
 // MapRowsToSliceOfStruct  maps db rows to structs
 func MapRowsToSliceOfStruct(scanner RowsScanner, sliceOfStructs interface{}, ignoreMissingField bool) error {
+	defer scanner.Close()
 	///return connection.db.Select(records, query, parameters...)
 	recordsPointerValue := reflect.ValueOf(sliceOfStructs)
 	if recordsPointerValue.Kind() != reflect.Ptr {
@@ -118,11 +119,12 @@ func MapRowsToSliceOfStruct(scanner RowsScanner, sliceOfStructs interface{}, ign
 	if recordsValue.Kind() != reflect.Slice {
 		return fmt.Errorf("The underlying type is not a slice,pointer to slice expected for %#v ", recordsValue)
 	}
-	defer scanner.Close()
+
 	columns, err := scanner.Columns()
 	if err != nil {
 		return err
 	}
+
 	// get the underlying type of a slice
 	// @see http://stackoverflow.com/questions/24366895/golang-reflect-slice-underlying-type
 	for scanner.Next() {

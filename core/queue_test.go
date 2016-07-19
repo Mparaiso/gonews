@@ -27,9 +27,9 @@ import (
 )
 
 // ExampleStack_first demonstrates the use of the middleware stack
-func ExampleStack_first() {
+func ExampleMiddlewareQueue_first() {
 	context := ""
-	stack := &gonews.Stack{Middlewares: []gonews.Middleware{
+	stack := &gonews.MiddlewareQueue{Middlewares: []gonews.Middleware{
 		func(c *gonews.Container, rw http.ResponseWriter, r *http.Request, next func()) {
 			context += "first middleware-"
 			next()

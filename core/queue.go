@@ -1,17 +1,17 @@
 //    Gonews is a webapp that provides a forum where users can post and discuss links
 //
 //    Copyright (C) 2016  mparaiso <mparaiso@online.fr>
-
+//
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU Affero General Public License as published
 //    by the Free Software Foundation, either version 3 of the License, or
 //    (at your option) any later version.
-
+//
 //    This program is distributed in the hope that it will be useful,
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of
 //    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //    GNU Affero General Public License for more details.
-
+//
 //    You should have received a copy of the GNU Affero General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -31,35 +31,35 @@ type ContainerFactory func() *Container
 // Middleware is a middleware. It can be transcient or final
 type Middleware func(*Container, http.ResponseWriter, *http.Request, func())
 
-// Stack is a stack of handlers
-type Stack struct {
+// MiddlewareQueue is a stack of handlers
+type MiddlewareQueue struct {
 	Middlewares []Middleware
 	ContainerFactory
 }
 
 // Push add a new middleware to the stack
-func (s *Stack) Push(m Middleware) *Stack {
+func (s *MiddlewareQueue) Push(m Middleware) *MiddlewareQueue {
 	s.Middlewares = append(s.Middlewares, m)
 	return s
 }
 
 // Shift prepends a new middleware to the stack
-func (s *Stack) Shift(m Middleware) *Stack {
+func (s *MiddlewareQueue) Shift(m Middleware) *MiddlewareQueue {
 	s.Middlewares = append([]Middleware{m}, s.Middlewares...)
 	return s
 }
 
 // Clone clones *Stack
-func (s *Stack) Clone() *Stack {
+func (s *MiddlewareQueue) Clone() *MiddlewareQueue {
 	var middlewares []Middleware
 	for _, middleware := range s.Middlewares {
 		middlewares = append(middlewares, middleware)
 	}
-	return &Stack{Middlewares: middlewares, ContainerFactory: s.ContainerFactory}
+	return &MiddlewareQueue{Middlewares: middlewares, ContainerFactory: s.ContainerFactory}
 }
 
 // Build returns a function that returns a http.HandlerFunc
-func (s *Stack) Build() func(...Middleware) http.HandlerFunc {
+func (s *MiddlewareQueue) Build() func(...Middleware) http.HandlerFunc {
 	// copy all the middlewares
 	var middlewares []Middleware
 	for _, middleware := range s.Middlewares {

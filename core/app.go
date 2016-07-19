@@ -102,10 +102,10 @@ func GetApp(appOptions AppOptions) http.Handler {
 }
 
 // GetDefaultStack returns the default middleware stack
-func GetDefaultStack(factory ContainerFactory) *Stack {
+func GetDefaultStack(factory ContainerFactory) *MiddlewareQueue {
 	// This is the default middleware stack each requests pass through all these middlewares
 	// before being handled by a controller (which is also a middleware FYI )
-	return &Stack{
+	return &MiddlewareQueue{
 		Middlewares: []Middleware{
 			StopWatchMiddleware,   // Times how long it takes for the request to be handled
 			LoggerMiddleware,      // Logs each request using the common log format
