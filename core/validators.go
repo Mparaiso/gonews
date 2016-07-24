@@ -268,9 +268,13 @@ func CSRFValidator(field string, value string, csrfProvider CSRFGenerator, actio
 		errors.Append(field, "invalid token")
 	}
 }
+
+// IsURL returns true if is url
 func IsURL(candidate string) bool {
 	return regexp.MustCompile(`^(https?\:\/\/)(\S+\.)?\S+\.\S+(\.\S+)?\/?\S+$`).MatchString(candidate)
 }
+
+// IsEmail returns true if is email
 func isEmail(candidate string) bool {
-	return regexp.MustCompile(`\w+@\w+\.\w+`).MatchString(candidate)
+	return regexp.MustCompile(`\S+@\S+\.\S+`).MatchString(candidate)
 }

@@ -34,12 +34,14 @@ type Any interface{}
 
 // Container contains all the application dependencies
 type Container struct {
-	ContainerOptions  ContainerOptions
-	db                *sql.DB
-	logger            LoggerInterface
-	threadRepository  *ThreadRepository
-	userRepository    *UserRepository
-	commentRepository *CommentRepository
+	ContainerOptions      ContainerOptions
+	db                    *sql.DB
+	logger                LoggerInterface
+	threadRepository      *ThreadRepository
+	userRepository        *UserRepository
+	commentRepository     *CommentRepository
+	threadVoteRepository  *ThreadVoteRepository
+	commentVoteRepository *CommentVoteRepository
 
 	template TemplateEngine
 
@@ -53,7 +55,8 @@ type Container struct {
 	LoggerProvider
 	FormDecoderProvider
 
-	user *User
+	user  *User
+	route *Route
 }
 
 // Debug returns true if debug mode
@@ -198,6 +201,62 @@ func (c *Container) MustGetCommentRepository() *CommentRepository {
 	}
 }
 
+// GetThreadVoteRepository returns the thread vote repository
+func (c *Container) GetThreadVoteRepository() (*ThreadVoteRepository, error) {
+	var (
+		db     *sql.DB
+		logger LoggerInterface
+		err    error
+	)
+	if c.threadVoteRepository == nil {
+		db, err = c.GetConnection()
+		if err == nil {
+			logger, err = c.GetLogger()
+			if err == nil {
+				c.threadVoteRepository = &ThreadVoteRepository{db, logger}
+			}
+		}
+	}
+	return c.threadVoteRepository, err
+}
+
+// MustGetThreadVoteRepository panics on error
+func (c *Container) MustGetThreadVoteRepository() *ThreadVoteRepository {
+	tvr, err := c.GetThreadVoteRepository()
+	if err != nil {
+		panic(err)
+	}
+	return tvr
+}
+
+// GetCommentVoteRepository returns the comment vote repository
+func (c *Container) GetCommentVoteRepository() (*CommentVoteRepository, error) {
+	var (
+		db     *sql.DB
+		logger LoggerInterface
+		err    error
+	)
+	if c.commentVoteRepository == nil {
+		db, err = c.GetConnection()
+		if err == nil {
+			logger, err = c.GetLogger()
+			if err == nil {
+				c.commentVoteRepository = &CommentVoteRepository{db, logger}
+			}
+		}
+	}
+	return c.commentVoteRepository, err
+}
+
+// MustGetCommentVoteRepository can panic on error
+func (c *Container) MustGetCommentVoteRepository() *CommentVoteRepository {
+	cvr, err := c.GetCommentVoteRepository()
+	if err != nil {
+		panic(err)
+	}
+	return cvr
+}
+
 // GetOptions returns the container's options
 func (c *Container) GetOptions() ContainerOptions {
 	return c.ContainerOptions
@@ -260,12 +319,22 @@ func (c *Container) GetSessionStore() (sessions.Store, error) {
 	return c.sessionStore, nil
 }
 
+// GetStoriesPerPage returns the number of stories per per
 func (c *Container) GetStoriesPerPage() int {
 	return c.ContainerOptions.StoriesPerPage
 }
 
+// GetCommentsPerPage returns the number of comments per par
 func (c *Container) GetCommentsPerPage() int {
 	return c.ContainerOptions.CommentsPerPage
+}
+
+// GetRoutes return routes
+func (c *Container) GetRoutes() *Route {
+	if c.route == nil {
+		c.route = &Route{}
+	}
+	return c.route
 }
 
 // ContainerOptions are options provided to the container

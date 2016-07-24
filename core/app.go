@@ -111,6 +111,7 @@ func GetDefaultStack(factory ContainerFactory) *MiddlewareQueue {
 			LoggerMiddleware,      // Logs each request using the common log format
 			SessionMiddleware,     // Initializes the session
 			RefreshUserMiddleware, // Refresh an authenticated user if user.ID exists in session
+			LoadUserStoryAndCommentVotesMiddleware,
 			TemplateMiddleware,    // Configures template environment
 		}, ContainerFactory: factory}
 }

@@ -234,7 +234,7 @@ func (repository ThreadRepository) GetByAuthorID(id int64, limit, offset int) (t
 	return
 }
 
-// GetThreadByIDWithCommentsAndTheirAuthors gets a threas with its comments
+// GetByIDWithComments gets a threas with its comments
 func (repository ThreadRepository) GetByIDWithComments(id int) (thread *Thread, err error) {
 	// Thread
 	query := `
@@ -272,7 +272,7 @@ func (repository ThreadRepository) GetByIDWithComments(id int) (thread *Thread, 
 	return
 }
 
-// GetThreadsOrderedByVoteCount returns threads ordered by thread vote count
+// GetSortedByScore returns threads ordered by thread vote count
 func (repository ThreadRepository) GetSortedByScore(limit, offset int) (threads Threads, err error) {
 	query := "SELECT * FROM threads_view ORDER BY Created DESC, Score DESC LIMIT ? OFFSET ? ;"
 	var (
@@ -286,7 +286,7 @@ func (repository ThreadRepository) GetSortedByScore(limit, offset int) (threads 
 	return
 }
 
-// GetOrderedByCreatedDesc returns threads ordered by age DESC
+// GetNewest returns threads ordered by age DESC
 func (repository ThreadRepository) GetNewest(limit, offset int) (threads Threads, err error) {
 	query := "SELECT * FROM threads_view ORDER BY Created DESC LIMIT ? OFFSET ? ;"
 	repository.Logger.Debug(query, limit, offset)
@@ -414,7 +414,25 @@ func (repository *CommentRepository) GetCommentsByAuthorID(id int64) (comments C
 }
 
 // CommentVoteRepository is a repository of comment votes
-type CommentVoteRepository struct{}
+type CommentVoteRepository struct {
+	DB     *sql.DB
+	Logger LoggerInterface
+}
+
+// GetByUser filters by user
+func (repository *CommentVoteRepository) GetByUser(user *User) (commentVotes CommentVotes, err error) {
+	var (
+		rows  *sql.Rows
+		query string
+	)
+	query = `SELECT id as ID,comment_id as CommentID,author_id as AuthorID,score as Score FROM comment_votes WHERE AuthorID = ? ; `
+	repository.Logger.Debug(query, user)
+	rows, err = repository.DB.Query(query, user.ID)
+	if err == nil {
+		err = MapRowsToSliceOfStruct(rows, &commentVotes, true)
+	}
+	return
+}
 
 // ThreadVoteRepository is a repository of thread votes
 type ThreadVoteRepository struct {
@@ -433,4 +451,19 @@ func (repository *ThreadVoteRepository) Create(threadVote *ThreadVote) (i int64,
 		}
 	}
 	return 0, err
+}
+
+// GetByUser select thread votes bu user
+func (repository *ThreadVoteRepository) GetByUser(user *User) (threadVotes ThreadVotes, err error) {
+	var (
+		rows  *sql.Rows
+		query string
+	)
+	query = `SELECT id AS ID,thread_id AS ThreadID,author_id AS AuthorID,score AS Score FROM thread_votes WHERE AuthorID = ? ; `
+	repository.Logger.Debug(query, user)
+	rows, err = repository.DB.Query(query, user.ID)
+	if err == nil {
+		err = MapRowsToSliceOfStruct(rows, &threadVotes, true)
+	}
+	return
 }

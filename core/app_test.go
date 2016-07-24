@@ -735,52 +735,52 @@ func TestDisplayingNewestStoriesPage(t *testing.T) {
 // It should returns to the page the vote was casted from
 // The user should have created a new thread_vote
 // TODO
-//func TestUpvotingAStory(t *testing.T) {
-//	t.Log("UPVOTING A STORY")
-//	t.Log("Given a server")
-//	db, server, user, err := LoginUser(t)
-//	defer func() {
-//		db.Close()
-//		server.Close()
-//	}()
-//	t.Log("When an authenticated user requests the homepage")
-//	res, err := http.Get(server.URL + gonews.Route{}.StoriesByScore())
-//	Expect(t, err, nil)
-//	Expect(t, res.StatusCode, 200, "\tstatus")
-//	/* form should take the form off
-//	<form action="/vote/thread" method="post" name="thread_vote">
-//		<input type="hidden" name="thread_vote_thread_id" value=""/>
-//		<input type="hidden" name="thread_vote_goto" value="/?item=34949#thread=349349"/>
-//		<input type submit value="&utrif;" name="thread_vote_submit" />
-//	</form>
-//	*/
-//	t.Log("Then the authenticated user upvotes the first story he can vote on")
-//	doc, err := goquery.NewDocumentFromResponse(res)
-//	Expect(t, err, nil)
-//	form := doc.Find("form[name='thread_vote']").First()
-//	Expect(t, form.Length(), 1, "form[name='thread_vote'] length")
+// func TestUpvotingAStory(t *testing.T) {
+// 	t.Log("UPVOTING A STORY")
+// 	t.Log("Given a server")
+// 	db, server, user, err := LoginUser(t)
+// 	defer func() {
+// 		db.Close()
+// 		server.Close()
+// 	}()
+// 	t.Log("When an authenticated user requests the homepage")
+// 	res, err := http.Get(server.URL + gonews.Route{}.StoriesByScore())
+// 	Expect(t, err, nil)
+// 	Expect(t, res.StatusCode, 200, "\tstatus")
+// 	/* form should take the form off
+// 	<form action="/vote/thread" method="post" name="thread_vote">
+// 		<input type="hidden" name="thread_vote_thread_id" value=""/>
+// 		<input type="hidden" name="thread_vote_goto" value="/?item=34949#thread=349349"/>
+// 		<input type submit value="&utrif;" name="thread_vote_submit" />
+// 	</form>
+// 	*/
+// 	t.Log("Then the authenticated user upvotes the first story he can vote on")
+// 	doc, err := goquery.NewDocumentFromResponse(res)
+// 	Expect(t, err, nil)
+// 	form := doc.Find("form[name='thread_vote']").First()
+// 	Expect(t, form.Length(), 1, "form[name='thread_vote'] length")
 
-//	values := url.Values{
-//		"thread_vote_thread_id": {form.Find("input[name='thread_vote_thread_id]").First().AttrOr("value", "")},
-//		"thread_vote_goto":      {form.Find("input[name='thread_vote_goto]").First().AttrOr("value", "")},
-//		"thread_vote_submit":    {form.Find("input[name='thread_vote_submit]").First().AttrOr("value", "")},
-//	}
-//	row := db.QueryRow("SELECT count(id) FROM thread_votes WHERE thread_votes.author_id = ? ", user.ID)
-//	var threadVoteCount int
-//	err = row.Scan(&threadVoteCount)
-//	Expect(t, err, nil)
-//	res, err = http.Post(server.URL+gonews.Route{}.CastStoryVote(), FORM_MIME_TYPE, strings.NewReader(values.Encode()))
-//	Expect(t, err, nil)
-//	t.Log("It should respond with status 200")
-//	Expect(t, res.StatusCode, 200, "status")
-//	location, err := res.Location()
-//	Expect(t, err, nil)
-//	t.Log("It should returns to the page the vote was casted from")
-//	Expect(t, location.RequestURI(), gonews.Route{}.StoriesByScore(), "location")
-//	var newThreadVoteCount int
-//	row = db.QueryRow("SELECT count(id) FROM thread_votes WHERE thread_votes.author_id = ? ", user.ID)
-//	err = row.Scan(&newThreadVoteCount)
-//	Expect(t, err, nil)
-//	t.Log("The user should have created a new thread_vote")
-//	Expect(t, newThreadVoteCount, threadVoteCount+1, "thread_votes count")
-//}
+// 	values := url.Values{
+// 		"thread_vote_thread_id": {form.Find("input[name='thread_vote_thread_id]").First().AttrOr("value", "")},
+// 		"thread_vote_goto":      {form.Find("input[name='thread_vote_goto]").First().AttrOr("value", "")},
+// 		"thread_vote_submit":    {form.Find("input[name='thread_vote_submit]").First().AttrOr("value", "")},
+// 	}
+// 	row := db.QueryRow("SELECT count(id) FROM thread_votes WHERE thread_votes.author_id = ? ", user.ID)
+// 	var threadVoteCount int
+// 	err = row.Scan(&threadVoteCount)
+// 	Expect(t, err, nil)
+// 	res, err = http.Post(server.URL+gonews.Route{}.CastStoryVote(), FORM_MIME_TYPE, strings.NewReader(values.Encode()))
+// 	Expect(t, err, nil)
+// 	t.Log("It should respond with status 200")
+// 	Expect(t, res.StatusCode, 200, "status")
+// 	location, err := res.Location()
+// 	Expect(t, err, nil)
+// 	t.Log("It should returns to the page the vote was casted from")
+// 	Expect(t, location.RequestURI(), gonews.Route{}.StoriesByScore(), "location")
+// 	var newThreadVoteCount int
+// 	row = db.QueryRow("SELECT count(id) FROM thread_votes WHERE thread_votes.author_id = ? ", user.ID)
+// 	err = row.Scan(&newThreadVoteCount)
+// 	Expect(t, err, nil)
+// 	t.Log("The user should have created a new thread_vote")
+// 	Expect(t, newThreadVoteCount, threadVoteCount+1, "thread_votes count")
+// }

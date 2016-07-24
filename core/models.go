@@ -1,17 +1,17 @@
 //    Gonews is a webapp that provides a forum where users can post and discuss links
 //
 //    Copyright (C) 2016  mparaiso <mparaiso@online.fr>
-
+//
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU Affero General Public License as published
 //    by the Free Software Foundation, either version 3 of the License, or
 //    (at your option) any later version.
-
+//
 //    This program is distributed in the hope that it will be useful,
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of
 //    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //    GNU Affero General Public License for more details.
-
+//
 //    You should have received a copy of the GNU Affero General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -36,6 +36,8 @@ type User struct {
 	Updated time.Time
 	// Virtual
 	Karma int
+	ThreadVotes
+	CommentVotes
 }
 
 // CreateSecurePassword generates a secure password from a string
@@ -65,6 +67,26 @@ func (u *User) Authenticate(unecryptedpassword string) error {
 		return err
 	}
 	return nil
+}
+
+// CanVoteOnComment returns true if user can vote on comment
+func (u *User) CanVoteOnComment(comment *Comment) bool {
+	for _, commentVote := range u.CommentVotes {
+		if commentVote.CommentID == comment.ID {
+			return false
+		}
+	}
+	return true
+}
+
+// CanVoteOnStory return true if user can vote on story
+func (u *User) CanVoteOnStory(thread *Thread) bool {
+	for _, threadVote := range u.ThreadVotes {
+		if threadVote.ThreadID == thread.ID {
+			return false
+		}
+	}
+	return true
 }
 
 // UserRole is a relation between users and roles
@@ -137,10 +159,13 @@ func (c *Comment) HasChildren() bool {
 	return len(c.Children) > 0
 }
 
+// Comments is a collection of comments
 type Comments []*Comment
 
+// Len return the number of comments
 func (c Comments) Len() int { return len(c) }
 
+// At returns a comment at an index
 func (c Comments) At(index int) *Comment {
 	if len(c) <= (index + 1) {
 		return c[index]
@@ -165,7 +190,7 @@ func (c Comments) GetTree() (commentTree []*Comment) {
 	return
 }
 
-// Comment vote is a vote for a comment
+// CommentVote is a comment vote
 type CommentVote struct {
 	ID        int64
 	CommentID int64
@@ -174,6 +199,9 @@ type CommentVote struct {
 	Created   time.Time
 	Updated   time.Time
 }
+
+// CommentVotes is a collection of comment votes
+type CommentVotes []*CommentVote
 
 // ThreadVote is a vote for a thread
 type ThreadVote struct {
@@ -185,8 +213,13 @@ type ThreadVote struct {
 	Updated  time.Time
 }
 
+// ThreadVotes are thread votes
+type ThreadVotes []*ThreadVote
+
+// Threads are a collection of stories
 type Threads []*Thread
 
+// GetAuthorIDs return the author's id of each thread
 func (threads Threads) GetAuthorIDs() (ids []int64) {
 	for _, thread := range threads {
 		ids = append(ids, thread.AuthorID)
@@ -194,6 +227,7 @@ func (threads Threads) GetAuthorIDs() (ids []int64) {
 	return
 }
 
+// GetAuthorIDsInterface return the author's id of each thread
 func (threads Threads) GetAuthorIDsInterface() (ids []interface{}) {
 	for _, thread := range threads {
 		ids = append(ids, thread.AuthorID)
